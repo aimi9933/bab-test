@@ -15,6 +15,7 @@ backend/.env
 backend/.venv/
 backend/config_backup.json
 backend/.pytest_cache/
+backend/*.egg-info/
 
 # Frontend artifacts
 node_modules/

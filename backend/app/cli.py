@@ -31,8 +31,12 @@ def main() -> None:
             path = write_backup(session)
             print(f"Backup written to {path}")
         if args.restore:
-            count = restore_from_backup(session)
-            print(f"Restored {count} providers from backup")
+            counts = restore_from_backup(session)
+            total = counts.get("providers", 0) + counts.get("routes", 0)
+            print(
+                f"Restored {counts.get('providers', 0)} providers and "
+                f"{counts.get('routes', 0)} routes from backup"
+            )
 
 
 if __name__ == "__main__":

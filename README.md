@@ -121,7 +121,7 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
 ### Provider Management
 
 | Method | Endpoint | Description |
-| --- | --- | --- |
+|--------|----------|-------------|
 | `GET` | `/api/providers` | List all configured providers |
 | `POST` | `/api/providers` | Create a new provider |
 | `GET` | `/api/providers/{id}` | Retrieve a single provider |
@@ -152,11 +152,87 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
 }
 ```
 
+### Model Route Management
+
+Model routes define strategies for selecting providers and models based on different selection modes.
+
+#### Route Modes
+
+- **`auto`**: Automatically rotate through configured providers using the specified strategy (round-robin or failover)
+- **`specific`**: Select a specific provider/model combination based on model name hint
+- **`multi`**: Select among multiple providers based on priority and strategy, with fallback behavior
+
+#### Strategies
+
+- **`round-robin`**: Distribute requests evenly across all nodes, cycling through in order
+- **`failover`**: Use the first available provider, switching to the next on error or unhealthy status
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/model-routes` | List all configured routes |
+| `POST` | `/api/model-routes` | Create a new route |
+| `GET` | `/api/model-routes/{id}` | Retrieve a single route |
+| `PATCH` | `/api/model-routes/{id}` | Update route configuration |
+| `DELETE` | `/api/model-routes/{id}` | Remove a route |
+| `POST` | `/api/model-routes/{id}/select` | Get the next provider/model selection for this route |
+| `GET` | `/api/model-routes/{id}/state` | Get internal state (e.g., round-robin indices) |
+
+#### Create Route Payload
+
+```json
+{
+  "name": "llm-auto-route",
+  "mode": "auto",
+  "is_active": true,
+  "config": {},
+  "nodes": [
+    {
+      "api_id": 1,
+      "models": [],
+      "strategy": "round-robin",
+      "priority": 0,
+      "metadata": {}
+    },
+    {
+      "api_id": 2,
+      "models": [],
+      "strategy": "round-robin",
+      "priority": 0,
+      "metadata": {}
+    }
+  ]
+}
+```
+
+#### Route Selection Response
+
+```json
+{
+  "provider_id": 1,
+  "provider_name": "OpenAI",
+  "model": "gpt-4"
+}
+```
+
+#### Route State Response
+
+```json
+{
+  "route_id": 1,
+  "route_name": "llm-auto-route",
+  "state": {
+    "round_robin_indices": {
+      "1": 1
+    }
+  }
+}
+```
+
 ### Backup Administration
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/api/admin/providers/restore` | Restore database contents from the JSON backup |
+| `POST` | `/api/admin/providers/restore` | Restore database contents (providers and routes) from the JSON backup |
 
 ### Health Check
 

@@ -45,7 +45,7 @@ def test_restore_from_backup_repopulates_database(db_session, settings):
     db_session.commit()
 
     restored = restore_from_backup(db_session)
-    assert restored == 1
+    assert restored.get("providers", 0) == 1
 
     providers = provider_service.list_providers(db_session)
     assert len(providers) == 1
