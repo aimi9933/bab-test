@@ -78,6 +78,35 @@ The API will be available at `http://127.0.0.1:8000`. The automatically generate
 
 Database tables are created on startup if they do not yet exist. Provider updates are automatically mirrored to the configured JSON backup file.
 
+## Frontend Management UI
+
+A lightweight management UI powered by Vite + Vue 3 lives under `frontend/`. The UI surfaces provider CRUD actions, validation workflows, and connectivity tests against the backend API.
+
+### Setup
+
+```bash
+cd frontend
+npm install
+```
+
+### Local development
+
+```bash
+npm run dev
+```
+
+The development server proxies `/api` calls to the FastAPI backend at `http://127.0.0.1:8000` by default. Copy `.env.example` to `.env` in `frontend/` to override `VITE_API_BASE_URL` or `VITE_API_PROXY_TARGET`.
+
+### Testing and builds
+
+```bash
+npm run test     # Run the Vitest suite
+npm run build    # Generate a production build
+npm run preview  # Preview the production build locally
+```
+
+Build artefacts are emitted to `frontend/dist/`.
+
 ## CLI Utilities
 
 A small CLI is provided for manual backup management:
