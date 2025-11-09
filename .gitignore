@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+*.db-journal
+.env
+.env.*
+.venv/
+venv/
+pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+backend/.env
+backend/.venv/
+backend/config_backup.json
+backend/.pytest_cache/
