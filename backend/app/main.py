@@ -5,12 +5,18 @@ from fastapi.responses import JSONResponse
 
 from .api.routes.admin import router as admin_router
 from .api.routes.providers import router as providers_router
+from .api.routes.routes import router as routes_router
 from .core.config import get_settings
 from .db.init_db import init_db
 from .services.providers import (
     ProviderConnectivityError,
     ProviderNotFoundError,
     ProviderServiceError,
+)
+from .services.routing import (
+    RouteNotFoundError,
+    RouteServiceError,
+    RouteValidationError,
 )
 
 settings = get_settings()
@@ -52,6 +58,21 @@ async def handle_file_not_found(request: Request, exc: FileNotFoundError) -> JSO
     return _create_error_response(404, str(exc))
 
 
+@app.exception_handler(RouteNotFoundError)
+async def handle_route_not_found(request: Request, exc: RouteNotFoundError) -> JSONResponse:
+    return _create_error_response(404, str(exc))
+
+
+@app.exception_handler(RouteValidationError)
+async def handle_route_validation_error(request: Request, exc: RouteValidationError) -> JSONResponse:
+    return _create_error_response(400, str(exc))
+
+
+@app.exception_handler(RouteServiceError)
+async def handle_route_service_error(request: Request, exc: RouteServiceError) -> JSONResponse:
+    return _create_error_response(400, str(exc))
+
+
 @app.get("/ping")
 async def ping() -> dict[str, str]:
     return {"status": "ok"}
@@ -59,3 +80,4 @@ async def ping() -> dict[str, str]:
 
 app.include_router(providers_router)
 app.include_router(admin_router)
+app.include_router(routes_router)

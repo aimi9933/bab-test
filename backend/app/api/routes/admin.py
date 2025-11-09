@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.post("/providers/restore", response_model=RestoreResponse)
 def restore_providers(db: Session = Depends(get_db)) -> RestoreResponse:
-    restored = restore_from_backup(db)
-    detail = "Providers restored from backup" if restored else "No providers were restored"
-    return RestoreResponse(restored=restored, detail=detail)
+    restored_counts = restore_from_backup(db)
+    total = restored_counts.get("providers", 0) + restored_counts.get("routes", 0)
+    detail = f"Restored {restored_counts.get('providers', 0)} providers and {restored_counts.get('routes', 0)} routes"
+    return RestoreResponse(restored=total, detail=detail)
