@@ -134,6 +134,7 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
 | `GET` | `/api/providers/{id}` | Retrieve a single provider |
 | `PATCH` | `/api/providers/{id}` | Update provider details (name, URL, models, API key, status) |
 | `DELETE` | `/api/providers/{id}` | Remove a provider |
+| `POST` | `/api/providers/test-direct` | Test a provider configuration without saving to database |
 | `POST` | `/api/providers/{id}/test` | Run a connectivity/health check against the provider |
 | `PATCH` | `/api/providers/{id}/health` | Manually override provider health status |
 
@@ -159,6 +160,20 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
   "detail": null
 }
 ```
+
+#### Test Direct Payload
+
+Test a provider configuration without saving it to the database:
+
+```json
+{
+  "base_url": "https://api.example.com/v1",
+  "api_key": "sk-test-key",
+  "models": ["test-model-1", "test-model-2"]
+}
+```
+
+The response uses the same format as the test endpoint response above. This endpoint is useful for validating provider configurations before saving them.
 
 #### Health Override Payload
 

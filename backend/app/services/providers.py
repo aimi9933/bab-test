@@ -141,3 +141,33 @@ async def test_provider_connectivity(
         session.refresh(provider)
         write_backup(session)
         raise ProviderConnectivityError("Failed to contact provider endpoint") from exc
+
+
+async def test_provider_direct(
+    base_url: str, api_key: str, timeout: float | None = None
+) -> dict:
+    """Test a provider configuration without saving to database."""
+    settings = get_settings()
+    request_timeout = timeout or settings.request_timeout_seconds
+
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+
+    url = base_url.rstrip("/") or base_url
+    start = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=request_timeout, follow_redirects=True) as client:
+            response = await client.get(url, headers=headers)
+        latency_ms = (time.perf_counter() - start) * 1000
+        status = "online" if response.is_success else "degraded"
+        result = {
+            "status": status,
+            "status_code": response.status_code,
+            "latency_ms": latency_ms,
+        }
+        if not response.is_success:
+            result["detail"] = f"Received status code {response.status_code}"
+        return result
+    except httpx.TimeoutException as exc:
+        raise ProviderConnectivityError("Timed out while contacting provider") from exc
+    except httpx.RequestError as exc:
+        raise ProviderConnectivityError("Failed to contact provider endpoint") from exc

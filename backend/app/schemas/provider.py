@@ -67,6 +67,22 @@ class ProviderTestResponse(BaseModel):
     detail: Optional[str] = None
 
 
+class ProviderTestDirect(BaseModel):
+    base_url: AnyHttpUrl
+    api_key: str = Field(..., min_length=1)
+    models: list[str] = Field(..., min_length=1)
+
+    @field_validator("models")
+    @classmethod
+    def validate_models(cls, value: list[str]) -> list[str]:
+        cleaned = [model.strip() for model in value if model and model.strip()]
+        if not cleaned:
+            raise ValueError("At least one model identifier is required")
+        if len(cleaned) != len(value):
+            raise ValueError("Model identifiers must be non-empty strings")
+        return cleaned
+
+
 class RestoreResponse(BaseModel):
     restored: int
     detail: str

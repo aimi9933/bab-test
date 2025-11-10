@@ -136,3 +136,210 @@ def test_test_endpoint_failure_returns_502(client, monkeypatch):
     response = client.post(f"/api/providers/{provider_id}/test")
     assert response.status_code == 502
     assert response.json()["detail"] == "Failed to contact provider endpoint"
+
+
+def test_test_direct_endpoint_success(client, monkeypatch):
+    class DummyResponse:
+        status_code = 200
+
+        @property
+        def is_success(self) -> bool:
+            return True
+
+    class DummyAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):  # noqa: ARG002
+            return DummyResponse()
+
+    monkeypatch.setattr("backend.app.services.providers.httpx.AsyncClient", DummyAsyncClient)
+
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "online"
+    assert data["status_code"] == 200
+    assert "latency_ms" in data
+
+
+def test_test_direct_endpoint_with_degraded_response(client, monkeypatch):
+    class DummyResponse:
+        status_code = 400
+
+        @property
+        def is_success(self) -> bool:
+            return False
+
+    class DummyAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):  # noqa: ARG002
+            return DummyResponse()
+
+    monkeypatch.setattr("backend.app.services.providers.httpx.AsyncClient", DummyAsyncClient)
+
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["status_code"] == 400
+    assert "Received status code 400" in data["detail"]
+
+
+def test_test_direct_endpoint_timeout(client, monkeypatch):
+    class TimeoutAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):  # noqa: ARG002
+            raise httpx.TimeoutException("timeout")
+
+    monkeypatch.setattr("backend.app.services.providers.httpx.AsyncClient", TimeoutAsyncClient)
+
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Timed out while contacting provider"
+
+
+def test_test_direct_endpoint_network_error(client, monkeypatch):
+    class FailingAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):  # noqa: ARG002
+            raise httpx.RequestError("network error")
+
+    monkeypatch.setattr("backend.app.services.providers.httpx.AsyncClient", FailingAsyncClient)
+
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Failed to contact provider endpoint"
+
+
+def test_test_direct_endpoint_validation_error_empty_models(client):
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": [],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_test_direct_endpoint_validation_error_missing_api_key(client):
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_test_direct_endpoint_validation_error_missing_url(client):
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_test_direct_does_not_affect_database(client, monkeypatch, db_session):
+    class DummyResponse:
+        status_code = 200
+
+        @property
+        def is_success(self) -> bool:
+            return True
+
+    class DummyAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):  # noqa: ARG002
+            return DummyResponse()
+
+    monkeypatch.setattr("backend.app.services.providers.httpx.AsyncClient", DummyAsyncClient)
+
+    # Call test-direct endpoint
+    response = client.post(
+        "/api/providers/test-direct",
+        json={
+            "base_url": "https://example.com/api",
+            "api_key": "test-key",
+            "models": ["model-1"],
+        },
+    )
+    assert response.status_code == 200
+
+    # Verify database is empty (no provider was created)
+    from backend.app.services import providers as provider_service
+
+    providers = provider_service.list_providers(db_session)
+    assert len(providers) == 0
