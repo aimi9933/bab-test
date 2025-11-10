@@ -80,16 +80,26 @@
 
           <div class="field-group">
             <label for="provider-api-key">API key</label>
+            <div v-if="mode === 'edit' && provider?.apiKeyMasked && !form.apiKey" class="masked-key-display">
+              <span class="masked-key">{{ provider.apiKeyMasked }}</span>
+              <button type="button" class="btn btn-small btn-secondary" @click="showApiKeyInput" :disabled="busy">
+                Update
+              </button>
+            </div>
             <input
+              v-else
               id="provider-api-key"
               name="apiKey"
               type="password"
               autocomplete="off"
               :disabled="busy"
               v-model="form.apiKey"
-              :placeholder="mode === 'edit' ? 'Leave blank to keep existing key' : 'sk-live-***'"
+              :placeholder="mode === 'edit' ? 'Enter new API key or leave blank to keep existing' : 'sk-live-***'"
             />
             <p v-if="fieldError('apiKey')" class="error-text">{{ fieldError('apiKey') }}</p>
+            <p v-if="mode === 'edit' && provider?.apiKeyMasked && !form.apiKey" class="help-text">
+              API key is saved and masked for security. Click "Update" to change it.
+            </p>
           </div>
 
           <div class="field-group">
@@ -176,8 +186,12 @@ const setFormFromProvider = (provider: Provider) => {
   form.baseUrl = provider.baseUrl;
   form.models = provider.models.length > 0 ? [...provider.models] : [''];
   form.isActive = provider.isActive;
-  form.apiKey = '';
+  form.apiKey = ''; // Always start with empty to show masked key
   resetErrors();
+};
+
+const showApiKeyInput = () => {
+  form.apiKey = ''; // Clear to show input field
 };
 
 watch(
@@ -303,3 +317,33 @@ const handleSubmit = () => {
   emit('submit', sanitized);
 };
 </script>
+
+<style scoped>
+.masked-key-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.masked-key {
+  color: #6c757d;
+  flex: 1;
+}
+
+.help-text {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+</style>
