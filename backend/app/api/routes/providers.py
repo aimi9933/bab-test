@@ -8,6 +8,7 @@ from ...db.session import get_db
 from ...schemas.provider import (
     ProviderCreate,
     ProviderRead,
+    ProviderTestDirect,
     ProviderTestResponse,
     ProviderUpdate,
 )
@@ -53,6 +54,15 @@ def update_provider(
 def delete_provider(provider_id: int, db: Session = Depends(get_db)) -> Response:
     provider_service.delete_provider(db, provider_id)
     return Response(status_code=204)
+
+
+@router.post("/test-direct", response_model=ProviderTestResponse)
+async def test_provider_direct(
+    payload: ProviderTestDirect,
+    timeout: float | None = Query(default=None, ge=0.1, description="Override request timeout in seconds"),
+) -> ProviderTestResponse:
+    result = await provider_service.test_provider_direct(str(payload.base_url), payload.api_key, timeout)
+    return ProviderTestResponse(**result)
 
 
 @router.post("/{provider_id}/test", response_model=ProviderTestResponse)
