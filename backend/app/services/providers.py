@@ -16,6 +16,48 @@ from ..schemas.provider import ProviderCreate, ProviderUpdate
 from .backup import write_backup
 
 
+def normalize_base_url(url: str) -> str:
+    """
+    Normalize a base URL by removing trailing slashes.
+    
+    Args:
+        url: The base URL to normalize
+        
+    Returns:
+        The normalized URL without trailing slashes
+        
+    Examples:
+        >>> normalize_base_url("https://api.example.com/v1")
+        'https://api.example.com/v1'
+        >>> normalize_base_url("https://api.example.com/v1/")
+        'https://api.example.com/v1'
+    """
+    return url.rstrip('/')
+
+
+def construct_api_url(base_url: str, endpoint: str) -> str:
+    """
+    Construct a full API URL from a base URL and endpoint.
+    
+    Args:
+        base_url: The base URL (will be normalized)
+        endpoint: The API endpoint (should start with /)
+        
+    Returns:
+        The properly constructed URL
+        
+    Examples:
+        >>> construct_api_url("https://api.example.com/v1", "/chat/completions")
+        'https://api.example.com/v1/chat/completions'
+        >>> construct_api_url("https://api.example.com/v1/", "/chat/completions")
+        'https://api.example.com/v1/chat/completions'
+    """
+    normalized_base = normalize_base_url(base_url)
+    # Ensure endpoint starts with / but doesn't have double slashes
+    clean_endpoint = endpoint.lstrip('/')
+    return f"{normalized_base}/{clean_endpoint}"
+
+
 class ProviderNotFoundError(LookupError):
     pass
 
@@ -105,7 +147,7 @@ async def test_provider_connectivity(
     decrypted_key = decrypt_api_key(provider.api_key_encrypted)
     headers = {"Authorization": f"Bearer {decrypted_key}"} if decrypted_key else {}
 
-    url = provider.base_url.rstrip("/") or provider.base_url
+    url = normalize_base_url(provider.base_url)
     start = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=request_timeout, follow_redirects=True) as client:
@@ -152,7 +194,7 @@ async def test_provider_direct(
 
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
 
-    url = base_url.rstrip("/") or base_url
+    url = normalize_base_url(base_url)
     start = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=request_timeout, follow_redirects=True) as client:

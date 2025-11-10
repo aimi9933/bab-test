@@ -97,7 +97,8 @@ class HealthChecker:
         decrypted_key = decrypt_api_key(provider.api_key_encrypted)
         headers = {"Authorization": f"Bearer {decrypted_key}"} if decrypted_key else {}
 
-        url = provider.base_url.rstrip("/") or provider.base_url
+        from .providers import normalize_base_url
+        url = normalize_base_url(provider.base_url)
         start = time.perf_counter()
 
         try:
