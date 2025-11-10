@@ -9,7 +9,10 @@
     "preview": "vite preview --strictPort",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "type-check": "vue-tsc --noEmit"
+    "test:ui": "vitest --ui",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "echo 'No linter configured'",
+    "format": "prettier --write \"src/**/*.{ts,tsx,vue,js,jsx,json,css,scss}\""
   },
   "dependencies": {
     "axios": "^1.6.8",

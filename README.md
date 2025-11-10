@@ -327,8 +327,296 @@ pytest backend
 
 Tests automatically provision an isolated SQLite database and backup file for each test case.
 
+## Docker Deployment
+
+The application includes Docker support for containerized deployment with both backend and frontend services.
+
+### Quick Start with Docker Compose
+
+1. **Prepare environment file:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and change BACKEND_API_KEY_SECRET to a secure value
+   ```
+
+2. **Start the application:**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access the application:**
+   - Frontend: http://localhost
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+4. **Check logs:**
+   ```bash
+   docker-compose logs -f backend  # Backend logs
+   docker-compose logs -f frontend # Frontend logs
+   ```
+
+5. **Stop the application:**
+   ```bash
+   docker-compose down
+   ```
+
+### Docker Build Details
+
+#### Backend Dockerfile
+- Uses multi-stage build for minimal final image size
+- Based on `python:3.10-slim`
+- Installs runtime dependencies (SQLite3)
+- Includes health checks
+- Automatically initializes database and restores from backup on startup
+
+#### Frontend Dockerfile
+- Uses multi-stage build (Node.js builder → Nginx server)
+- Based on `nginx:alpine` for production serving
+- Includes Gzip compression
+- Serves static assets with proper caching headers
+- Proxies API calls to backend service
+- Includes health checks
+
+#### Nginx Configuration
+- Handles SPA routing (all non-asset routes serve index.html)
+- Proxies `/api/` and `/ping` endpoints to backend
+- Sets security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+- Enables Gzip compression for text-based assets
+- Caches static assets with 1-year expiration
+
+### Environment Variables for Docker
+
+See `.env.example` for a complete list. Key variables:
+
+```bash
+# Core settings
+BACKEND_DATABASE_URL=sqlite:///./data/providers.db
+BACKEND_API_KEY_SECRET=your-strong-secret-key
+BACKEND_BACKUP_FILE=./data/config_backup.json
+
+# Health checks
+BACKEND_HEALTH_CHECK_ENABLED=true
+BACKEND_HEALTH_CHECK_INTERVAL_SECONDS=60.0
+BACKEND_HEALTH_CHECK_TIMEOUT_SECONDS=5.0
+BACKEND_HEALTH_CHECK_FAILURE_THRESHOLD=3
+
+# Frontend
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### Volume Persistence
+
+The docker-compose configuration creates two named volumes:
+
+- `backend-data`: Persists SQLite database and backup files
+- `backend-logs`: Persists application logs
+
+These volumes ensure data persists across container restarts.
+
+### Production Considerations
+
+When deploying to production:
+
+1. **Change secrets:** Update `BACKEND_API_KEY_SECRET` to a strong, unique value (minimum 32 characters)
+2. **TLS/HTTPS:** Configure a reverse proxy (nginx, Traefik, or AWS ALB) for TLS termination
+3. **Secrets management:** Use Docker secrets or environment variable services instead of .env files
+4. **Scaling:** Use orchestration tools (Docker Swarm, Kubernetes) for multi-replica deployments
+5. **Monitoring:** Integrate with monitoring solutions (Prometheus, ELK, DataDog)
+6. **Backup strategy:** Configure automated backup of the backend-data volume
+7. **Logging:** Centralize logs using Docker logging drivers or log aggregation services
+
+## Observability & Monitoring
+
+The application includes comprehensive observability features for monitoring performance, health, and debugging.
+
+### Structured Logging
+
+All application events are logged with structured JSON format to `backend/logs/app.log`:
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00",
+  "level": "INFO",
+  "logger": "app.services.routing",
+  "message": "Selected provider for route",
+  "request_id": "a1b2c3d4-e5f6-7890",
+  "method": "POST",
+  "path": "/api/model-routes/1/select",
+  "status_code": 200,
+  "duration_ms": 45.2
+}
+```
+
+#### Features
+- **Sensitive data redaction**: API keys, passwords, and tokens are automatically redacted
+- **Request tracing**: Correlation IDs are included in all log entries for request tracking
+- **Context information**: HTTP method, path, status code, and duration are captured
+- **Log rotation**: Logs are rotated when reaching 10MB (10 backup files retained)
+- **Dual output**: JSON to files for structured processing, plain text to console for development
+
+#### Log Levels
+- `DEBUG`: Detailed diagnostic information
+- `INFO`: General informational messages
+- `WARNING`: Warning messages for potentially harmful situations
+- `ERROR`: Error messages for failures
+
+### Metrics API
+
+Access application metrics at the `/api/admin/stats` endpoint:
+
+```bash
+curl http://localhost:8000/api/admin/stats
+```
+
+Response includes:
+
+```json
+{
+  "uptime_seconds": 3600.5,
+  "total_requests": 1250,
+  "total_errors": 15,
+  "error_rate": 1.2,
+  "average_duration_ms": 45.3,
+  "status_codes": {
+    "200": 1150,
+    "404": 50,
+    "500": 15,
+    "201": 35
+  },
+  "endpoints": {
+    "GET /api/providers": {
+      "count": 250,
+      "total_duration_ms": 10000,
+      "avg_duration_ms": 40,
+      "error_count": 0
+    },
+    "POST /api/model-routes/1/select": {
+      "count": 100,
+      "total_duration_ms": 5000,
+      "avg_duration_ms": 50,
+      "error_count": 2
+    }
+  },
+  "recent_requests": [
+    {
+      "timestamp": 1705318200.5,
+      "method": "GET",
+      "path": "/api/providers",
+      "status_code": 200,
+      "duration_ms": 42.1
+    }
+  ]
+}
+```
+
+#### Metrics Tracked
+- **Uptime**: Server uptime in seconds
+- **Total requests**: Number of requests since startup
+- **Total errors**: Number of error responses (4xx, 5xx)
+- **Error rate**: Percentage of requests that resulted in errors
+- **Average response time**: Average request duration in milliseconds
+- **Status code distribution**: Breakdown of response status codes
+- **Per-endpoint stats**: Request count, error count, average duration
+- **Recent requests**: Last 10 requests for debugging
+
+### Logs API
+
+Access recent logs at `/api/admin/logs`:
+
+```bash
+# Get last 50 logs (default)
+curl http://localhost:8000/api/admin/logs
+
+# Get last 200 logs
+curl http://localhost:8000/api/admin/logs?limit=200
+```
+
+Response:
+
+```json
+{
+  "logs": [
+    {
+      "timestamp": "2024-01-15T10:30:00",
+      "level": "INFO",
+      "logger": "backend.app.main",
+      "message": "Request completed",
+      "request_id": "a1b2c3d4-e5f6",
+      "method": "GET",
+      "path": "/api/providers",
+      "status_code": 200,
+      "duration_ms": 45.2
+    }
+  ],
+  "total": 50
+}
+```
+
+### Observability Dashboard
+
+The frontend includes a comprehensive observability dashboard at `/observability`:
+
+#### Widgets
+- **Uptime display**: Server uptime in human-readable format
+- **Total requests**: Cumulative request count since startup
+- **Error rate**: Current error rate percentage with color coding
+- **Average response time**: Mean response time in milliseconds
+
+#### Health Status
+Visual badges showing system health:
+- **Healthy** (< 5% error rate): Green badge
+- **Degraded** (5-20% error rate): Yellow badge
+- **Warning** (> 20% error rate): Red badge
+
+#### Top Endpoints
+Table showing:
+- Most frequently called endpoints
+- Request counts
+- Average response times
+- Error counts per endpoint
+
+#### Recent Logs
+Live log viewer showing:
+- Last 10 logs (load more button for additional logs)
+- Color-coded by log level (DEBUG, INFO, WARNING, ERROR)
+- Request context (method, path, status code, duration)
+- Request ID for correlation
+- Auto-refresh every 30 seconds
+
+### Log Rotation & Persistence
+
+Log files are stored in `backend/logs/` with automatic rotation:
+
+- **Max file size**: 10 MB
+- **Max backups**: 10 files (100 MB total)
+- **Format**: JSON (parseable by log aggregation tools)
+- **Retention**: Oldest logs are automatically removed when backup count exceeded
+
+For Docker deployments, logs persist in the `backend-logs` volume.
+
+## Quick Start Commands
+
+For common development and deployment tasks, use the Makefile:
+
+```bash
+make help              # Show all available commands
+make install           # Install dependencies
+make dev               # Start backend and frontend in dev mode
+make test              # Run all tests
+make build             # Build application
+make docker-build      # Build Docker images
+make docker-up         # Start containers
+make docker-down       # Stop containers
+make docker-logs       # Follow container logs
+make lint              # Run linting checks
+make format            # Format code
+```
+
 ## Development Notes
 
 - API keys are encrypted using a key derived from `BACKEND_API_KEY_SECRET`. Changing the secret invalidates existing encrypted keys.
 - JSON backups are refreshed on every create/update/delete/test operation to keep the export current.
 - When running under Uvicorn, database paths and backup directories are created automatically if they are missing.
+- Logs are structured in JSON format and include request correlation IDs for tracing.
+- Sensitive data in logs is automatically redacted to prevent accidental exposure.
+- Metrics are collected in-memory and reset on application restart.

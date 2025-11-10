@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import time
+import uuid
+
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .api.routes.admin import router as admin_router
@@ -9,6 +13,8 @@ from .api.routes.routes import router as routes_router
 from .core.config import get_settings
 from .db.init_db import init_db
 from .services.health_checker import get_health_checker
+from .services.logging import get_logger, setup_logging
+from .services.metrics import get_metrics
 from .services.providers import (
     ProviderConnectivityError,
     ProviderNotFoundError,
@@ -21,21 +27,94 @@ from .services.routing import (
 )
 
 settings = get_settings()
+setup_logging()
+logger = get_logger(__name__)
 
 app = FastAPI(title=settings.app_name)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def logging_and_metrics_middleware(request: Request, call_next) -> JSONResponse:
+    """Middleware to log requests and track metrics."""
+    request_id = str(uuid.uuid4())
+    start_time = time.time()
+
+    # Log request
+    logger.info(
+        f"Request started: {request.method} {request.url.path}",
+        extra={
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+        },
+    )
+
+    try:
+        response = await call_next(request)
+        duration_ms = (time.time() - start_time) * 1000
+
+        # Track metrics
+        metrics = get_metrics()
+        metrics.record_request(
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+        )
+
+        # Log response
+        logger.info(
+            f"Request completed: {request.method} {request.url.path}",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+            },
+        )
+
+        response.headers["X-Request-ID"] = request_id
+        return response
+    except Exception as exc:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.error(
+            f"Request failed: {request.method} {request.url.path}: {str(exc)}",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": duration_ms,
+            },
+            exc_info=True,
+        )
+        raise
 
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    logger.info("Starting application")
     init_db()
     health_checker = get_health_checker()
     await health_checker.start()
+    logger.info("Application started successfully")
 
 
 @app.on_event("shutdown")
 async def on_shutdown() -> None:
+    logger.info("Shutting down application")
     health_checker = get_health_checker()
     await health_checker.stop()
+    logger.info("Application shut down successfully")
 
 
 def _create_error_response(status_code: int, detail: str) -> JSONResponse:
@@ -85,6 +164,13 @@ async def handle_route_service_error(request: Request, exc: RouteServiceError) -
 @app.get("/ping")
 async def ping() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/admin/stats")
+async def get_stats() -> dict:
+    """Get application statistics and metrics."""
+    metrics = get_metrics()
+    return metrics.get_stats()
 
 
 app.include_router(providers_router)

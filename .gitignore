@@ -4,7 +4,8 @@ __pycache__/
 *.db
 *.db-journal
 .env
-.env.*
+.env.local
+.env.*.local
 .venv/
 venv/
 pytest_cache/
@@ -16,6 +17,8 @@ backend/.venv/
 backend/config_backup.json
 backend/.pytest_cache/
 backend/*.egg-info/
+backend/data/
+backend/logs/
 
 # Frontend artifacts
 node_modules/

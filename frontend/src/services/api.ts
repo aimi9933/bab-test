@@ -14,6 +14,41 @@ interface ProviderTestResponsePayload {
   detail: string | null;
 }
 
+export interface AppStats {
+  uptime_seconds: number;
+  total_requests: number;
+  total_errors: number;
+  error_rate: number;
+  average_duration_ms: number;
+  status_codes: Record<string, number>;
+  endpoints: Record<string, any>;
+  recent_requests: Array<{
+    timestamp: number;
+    method: string;
+    path: string;
+    status_code: number;
+    duration_ms: number;
+  }>;
+}
+
+export interface LogEntry {
+  timestamp: string;
+  level: string;
+  logger: string;
+  message: string;
+  request_id?: string;
+  method?: string;
+  path?: string;
+  status_code?: number;
+  duration_ms?: number;
+  [key: string]: any;
+}
+
+export interface LogsResponse {
+  logs: LogEntry[];
+  total: number;
+}
+
 export interface ApiError {
   message: string;
   statusCode?: number;
@@ -84,6 +119,16 @@ export const api = {
       is_healthy: isHealthy,
     });
     return mapProvider(data);
+  },
+  async getStats(): Promise<AppStats> {
+    const { data } = await apiClient.get<AppStats>('/api/admin/stats');
+    return data;
+  },
+  async getLogs(limit: number = 100): Promise<LogsResponse> {
+    const { data } = await apiClient.get<LogsResponse>('/api/admin/logs', {
+      params: { limit },
+    });
+    return data;
   },
 };
 
