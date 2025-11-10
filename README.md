@@ -10,6 +10,10 @@ This repository now includes a FastAPI backend for managing external Large Langu
 - Connectivity test endpoint that reports status and latency
 - Backup restore via admin API or CLI helper
 - SQLite persistence with environment-driven configuration
+- **OpenAI-compatible `/v1/chat/completions` endpoint** with routing engine integration
+- Support for multiple providers (OpenAI, Anthropic Claude, Google Gemini) with automatic adapter selection
+- Streaming and non-streaming chat completion modes
+- Automatic retry/failover on provider failures
 - Comprehensive pytest-based unit and integration tests
 
 ## Project Structure
@@ -233,6 +237,127 @@ Model routes define strategies for selecting providers and models based on diffe
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `POST` | `/api/admin/providers/restore` | Restore database contents (providers and routes) from the JSON backup |
+
+### OpenAI Chat Completions
+
+The backend exposes an OpenAI-compatible `/v1/chat/completions` endpoint that leverages the routing engine to intelligently select providers and handle failover.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | Create a chat completion (streaming or non-streaming) |
+
+#### Request Body
+
+```json
+{
+  "model": "llm-auto-route",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Hello, how are you?"
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 150,
+  "stream": false
+}
+```
+
+The `model` parameter should reference a route name configured in the routing engine. The routing engine will select an appropriate provider/model based on the route configuration.
+
+#### Response (Non-Streaming)
+
+```json
+{
+  "id": "chatcmpl-123abc",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! I'm doing well, thank you for asking."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 15,
+    "total_tokens": 35
+  }
+}
+```
+
+#### Streaming Response
+
+When `stream: true` is set, the endpoint returns Server-Sent Events (SSE) with chunks in OpenAI format:
+
+```
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+```
+
+#### Provider Adapters
+
+The backend automatically detects and uses the appropriate adapter based on the provider configuration:
+
+- **OpenAI Adapter**: For OpenAI and OpenAI-compatible APIs
+- **Anthropic Adapter**: For Claude models (translates between OpenAI and Anthropic message formats)
+- **Gemini Adapter**: For Google Gemini models (translates to Gemini API format)
+
+Provider detection is based on the provider name or base URL. Custom providers are treated as OpenAI-compatible by default.
+
+#### Authentication
+
+The endpoint supports optional API key authentication via the `Authorization` header:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/chat/completions \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llm-auto-route",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+#### Retry and Failover
+
+The chat completions service automatically retries failed requests up to 3 times (configurable), selecting different providers via the routing engine. This provides automatic failover when a provider is unavailable or returns an error.
+
+4xx errors from providers are not retried, as they typically indicate client errors (invalid request, authentication issues, etc.).
+
+#### Usage with Cline
+
+To use this endpoint with Cline or other OpenAI-compatible clients:
+
+1. Set the API base URL to your backend: `http://127.0.0.1:8000/v1`
+2. Set the model to your route name (e.g., `llm-auto-route`)
+3. Optionally provide an API key if authentication is enabled
+
+Example Cline configuration:
+
+```json
+{
+  "openai": {
+    "apiUrl": "http://127.0.0.1:8000/v1",
+    "apiKey": "optional-key",
+    "model": "llm-auto-route"
+  }
+}
+```
 
 ### Health Check
 
