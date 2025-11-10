@@ -155,6 +155,25 @@ export const useProviders = () => {
     }
   };
 
+  const toggleProviderHealth = async (provider: Provider) => {
+    saving.value = true;
+    resetFeedback();
+    try {
+      const newHealth = !provider.isHealthy;
+      const updated = await api.setProviderHealth(provider.id, newHealth);
+      upsertProvider(updated);
+      const action = newHealth ? 'enabled' : 'disabled';
+      setSuccess(`Provider ${action}.`);
+      return updated;
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError);
+      throw apiError;
+    } finally {
+      saving.value = false;
+    }
+  };
+
   return {
     providers,
     loading,
@@ -170,6 +189,7 @@ export const useProviders = () => {
     updateProvider,
     deleteProvider,
     testProvider,
+    toggleProviderHealth,
     clearFeedback: resetFeedback,
   };
 };

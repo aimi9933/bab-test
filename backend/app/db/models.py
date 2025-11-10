@@ -23,6 +23,8 @@ class ExternalAPI(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="unknown")
     latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
     last_tested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    consecutive_failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_healthy: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -39,6 +41,8 @@ class ExternalAPI(Base):
             "status": self.status,
             "latency_ms": self.latency_ms,
             "last_tested_at": self.last_tested_at.isoformat() if self.last_tested_at else None,
+            "consecutive_failures": self.consecutive_failures,
+            "is_healthy": self.is_healthy,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

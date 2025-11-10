@@ -21,6 +21,7 @@ def _configure_test_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("BACKEND_DATABASE_URL", f"sqlite:///{db_file}")
     monkeypatch.setenv("BACKEND_BACKUP_FILE", str(backup_file))
     monkeypatch.setenv("BACKEND_API_KEY_SECRET", "tests-secret-key")
+    monkeypatch.setenv("BACKEND_HEALTH_CHECK_ENABLED", "false")
 
     reset_settings_cache()
     dispose_engine()

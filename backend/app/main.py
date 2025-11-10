@@ -8,6 +8,7 @@ from .api.routes.providers import router as providers_router
 from .api.routes.routes import router as routes_router
 from .core.config import get_settings
 from .db.init_db import init_db
+from .services.health_checker import get_health_checker
 from .services.providers import (
     ProviderConnectivityError,
     ProviderNotFoundError,
@@ -25,8 +26,16 @@ app = FastAPI(title=settings.app_name)
 
 
 @app.on_event("startup")
-def on_startup() -> None:
+async def on_startup() -> None:
     init_db()
+    health_checker = get_health_checker()
+    await health_checker.start()
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    health_checker = get_health_checker()
+    await health_checker.stop()
 
 
 def _create_error_response(status_code: int, detail: str) -> JSONResponse:

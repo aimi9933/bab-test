@@ -623,3 +623,116 @@ class TestModelNodeOverrides:
         provider_id, model = service.select_provider_and_model(db_session, route.id)
 
         assert model == "gpt-3.5-turbo"
+
+
+class TestHealthCheckIntegration:
+    def test_unhealthy_provider_skipped_in_auto_mode(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="health-aware-auto-route",
+            mode="auto",
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, strategy="round-robin"),
+                RouteNodeCreate(api_id=provider_anthropic.id, strategy="round-robin"),
+            ],
+        )
+        route = service.create_route(db_session, payload)
+
+        provider_openai.is_healthy = False
+        db_session.commit()
+
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id == provider_anthropic.id
+
+    def test_unhealthy_provider_skipped_in_specific_mode(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="health-aware-specific-route",
+            mode="specific",
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, models=["gpt-4"]),
+                RouteNodeCreate(api_id=provider_anthropic.id, models=["gpt-4", "claude-3-opus"]),
+            ],
+        )
+        route = service.create_route(db_session, payload)
+
+        provider_openai.is_healthy = False
+        db_session.commit()
+
+        provider_id, model = service.select_provider_and_model(db_session, route.id, model_hint="gpt-4")
+
+        assert provider_id == provider_anthropic.id
+        assert model == "gpt-4"
+
+    def test_unhealthy_provider_skipped_in_multi_mode(
+        self,
+        db_session: Session,
+        provider_openai: ExternalAPI,
+        provider_anthropic: ExternalAPI,
+        provider_cohere: ExternalAPI,
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="health-aware-multi-route",
+            mode="multi",
+            nodes=[
+                RouteNodeCreate(
+                    api_id=provider_openai.id, priority=1, strategy="round-robin", models=["gpt-4"]
+                ),
+                RouteNodeCreate(
+                    api_id=provider_anthropic.id, priority=2, strategy="failover", models=["claude-3-opus"]
+                ),
+                RouteNodeCreate(
+                    api_id=provider_cohere.id, priority=3, strategy="round-robin", models=["command"]
+                ),
+            ],
+        )
+        route = service.create_route(db_session, payload)
+
+        provider_openai.is_healthy = False
+        db_session.commit()
+
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id == provider_anthropic.id
+
+    def test_all_unhealthy_providers_raises_error(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="all-unhealthy-route",
+            mode="auto",
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, strategy="round-robin"),
+                RouteNodeCreate(api_id=provider_anthropic.id, strategy="round-robin"),
+            ],
+        )
+        route = service.create_route(db_session, payload)
+
+        provider_openai.is_healthy = False
+        provider_anthropic.is_healthy = False
+        db_session.commit()
+
+        with pytest.raises(RouteServiceError, match="No active providers"):
+            service.select_provider_and_model(db_session, route.id)
+
+    def test_health_status_persists_after_provider_update(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        provider_openai.is_healthy = False
+        provider_openai.consecutive_failures = 5
+        db_session.commit()
+        db_session.refresh(provider_openai)
+
+        assert provider_openai.is_healthy is False
+        assert provider_openai.consecutive_failures == 5

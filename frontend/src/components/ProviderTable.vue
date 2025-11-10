@@ -6,6 +6,7 @@
           <th scope="col">Provider</th>
           <th scope="col">Base URL</th>
           <th scope="col">Models</th>
+          <th scope="col">Health</th>
           <th scope="col">Status</th>
           <th scope="col">Latency</th>
           <th scope="col">Last test</th>
@@ -30,6 +31,14 @@
           <td>
             <div class="model-list">
               <span v-for="model in provider.models" :key="model" class="badge neutral">{{ model }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" :class="healthBadgeClass(provider.isHealthy)">
+              {{ provider.isHealthy ? 'Healthy' : 'Unhealthy' }}
+            </span>
+            <div v-if="provider.consecutiveFailures > 0" class="test-meta">
+              <span>Failures: {{ provider.consecutiveFailures }}</span>
             </div>
           </td>
           <td>
@@ -67,6 +76,13 @@
                 <span v-if="testingId === provider.id">Testing…</span>
                 <span v-else>Test</span>
               </button>
+              <button
+                :class="['btn', provider.isHealthy ? 'btn-warning' : 'btn-success']"
+                type="button"
+                @click="$emit('health-toggle', provider)"
+              >
+                {{ provider.isHealthy ? 'Disable' : 'Enable' }}
+              </button>
               <button class="btn btn-danger" type="button" @click="$emit('delete', provider)">
                 Delete
               </button>
@@ -93,7 +109,12 @@ defineEmits<{
   (event: 'edit', provider: Provider): void;
   (event: 'delete', provider: Provider): void;
   (event: 'test', provider: Provider): void;
+  (event: 'health-toggle', provider: Provider): void;
 }>();
+
+const healthBadgeClass = (isHealthy: boolean) => {
+  return isHealthy ? 'success' : 'error';
+};
 
 const statusBadgeClass = (status: string) => {
   const normalized = status.toLowerCase();
