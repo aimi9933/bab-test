@@ -56,6 +56,7 @@ class ProviderRead(ProviderBase):
     is_healthy: bool
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    api_key_masked: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

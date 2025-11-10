@@ -16,6 +16,33 @@ from ..schemas.provider import ProviderCreate, ProviderUpdate
 from .backup import write_backup
 
 
+def mask_api_key(api_key: str) -> str:
+    """
+    Mask an API key for display purposes.
+    
+    Shows the first few characters and last few characters with asterisks in between.
+    For example: sk-1234567890abcdef -> sk-***...***cdef
+    
+    Args:
+        api_key: The API key to mask
+        
+    Returns:
+        The masked API key
+    """
+    if not api_key:
+        return ""
+    
+    if len(api_key) <= 8:
+        # For very short keys, just mask most of it
+        return api_key[:2] + "***" + api_key[-2:] if len(api_key) > 4 else "***"
+    
+    # Show first 4-6 chars and last 4 chars
+    prefix_len = min(6, len(api_key) // 4)
+    suffix_len = 4
+    
+    return f"{api_key[:prefix_len]}***...***{api_key[-suffix_len:]}"
+
+
 def normalize_base_url(url: str) -> str:
     """
     Normalize a base URL by removing trailing slashes.

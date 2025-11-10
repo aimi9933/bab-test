@@ -472,3 +472,53 @@ def test_provider_stored_with_normalized_url(db_session):
     
     # URL should be stored as-is (normalization happens at usage time)
     assert provider.base_url == "https://api.example.com/v1/"
+
+
+def test_api_key_masking_functionality(db_session):
+    """Test that API key masking works correctly."""
+    from backend.app.services.providers import mask_api_key
+    from backend.app.core.security import encrypt_api_key
+    from backend.app.db.models import ExternalAPI
+    
+    # Test mask function directly (17 chars, so prefix_len = 17 // 4 = 4)
+    assert mask_api_key("sk-1234567890abcdef") == "sk-1***...***cdef"
+    assert mask_api_key("") == ""
+    assert mask_api_key(None) == ""
+    
+    # Test provider model property
+    provider = ExternalAPI(
+        name="Test Provider",
+        base_url="https://api.example.com/v1",
+        api_key_encrypted=encrypt_api_key("sk-1234567890abcdef1234567890abcdef"),
+        models=["gpt-4"],
+        is_active=True
+    )
+    
+    # Should return masked key
+    masked = provider.api_key_masked
+    assert "***...***" in masked
+    assert masked.endswith("cdef")
+    assert "sk-" in masked
+    
+    # Schema should include masked field
+    from backend.app.schemas.provider import ProviderRead
+    
+    provider_data = {
+        "id": 1,
+        "name": "Test Provider",
+        "base_url": "https://api.example.com/v1",
+        "models": ["gpt-4"],
+        "is_active": True,
+        "status": "online",
+        "latency_ms": 100.0,
+        "last_tested_at": None,
+        "consecutive_failures": 0,
+        "is_healthy": True,
+        "created_at": None,
+        "updated_at": None,
+        "api_key_masked": "sk-1***...***cdef"
+    }
+    
+    # Should validate successfully
+    provider_read = ProviderRead(**provider_data)
+    assert provider_read.api_key_masked == "sk-1***...***cdef"

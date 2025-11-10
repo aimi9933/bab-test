@@ -78,6 +78,7 @@ const mapProvider = (payload: ProviderResponse): Provider => ({
   isHealthy: payload.is_healthy,
   createdAt: payload.created_at,
   updatedAt: payload.updated_at,
+  apiKeyMasked: payload.api_key_masked,
 });
 
 const mapTestResult = (payload: ProviderTestResponsePayload): ProviderTestResult => ({

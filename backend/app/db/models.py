@@ -30,6 +30,19 @@ class ExternalAPI(Base):
 
     route_nodes: Mapped[list[RouteNode]] = relationship("RouteNode", back_populates="api", cascade="all, delete-orphan")
 
+    @property
+    def api_key_masked(self) -> str:
+        """Return a masked version of the API key for display."""
+        from ..services.providers import mask_api_key
+        from ..core.security import decrypt_api_key
+        
+        try:
+            decrypted_key = decrypt_api_key(self.api_key_encrypted)
+            return mask_api_key(decrypted_key)
+        except Exception:
+            # If decryption fails, return a generic masked value
+            return "***...***"
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,

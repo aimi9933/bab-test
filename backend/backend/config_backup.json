@@ -1,0 +1,22 @@
+{
+  "generated_at": "2025-11-10T14:05:28.202939+00:00",
+  "providers": [
+    {
+      "name": "Updated Provider Name",
+      "base_url": "https://api.example.com/v1",
+      "api_key_encrypted": "gAAAAABpEfEot-za6lymVgvg3GZaZWJZ5oZajQkkBX8fQoJVnK8QUjuxjoQN9yVjVzpgsu3IhspeCzx6FVAeitUWBKCmg4TPYWJ5sORUEWvWx3Bc8EVcrCY=",
+      "models": [
+        "gpt-4"
+      ],
+      "is_active": true,
+      "status": "unreachable",
+      "latency_ms": null,
+      "last_tested_at": "2025-11-10T14:05:26.298302",
+      "consecutive_failures": 1,
+      "is_healthy": true,
+      "created_at": "2025-11-10T14:05:06",
+      "updated_at": "2025-11-10T14:05:28"
+    }
+  ],
+  "routes": []
+}

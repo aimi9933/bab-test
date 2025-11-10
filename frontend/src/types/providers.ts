@@ -11,6 +11,7 @@ export interface ProviderResponse {
   is_healthy: boolean;
   created_at: string | null;
   updated_at: string | null;
+  api_key_masked?: string | null;
 }
 
 export interface Provider {
@@ -26,6 +27,7 @@ export interface Provider {
   isHealthy: boolean;
   createdAt: string | null;
   updatedAt: string | null;
+  apiKeyMasked?: string | null;
 }
 
 export interface ProviderFormValues {
