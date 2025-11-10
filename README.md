@@ -11,6 +11,8 @@ This repository now includes a FastAPI backend for managing external Large Langu
 - Backup restore via admin API or CLI helper
 - SQLite persistence with environment-driven configuration
 - Comprehensive pytest-based unit and integration tests
+- **OpenAI-compatible chat completions endpoint with routing and fallback**
+- **Provider adapters for OpenAI and Claude APIs with extensible framework**
 
 ## Project Structure
 
@@ -22,6 +24,7 @@ backend/
 │   ├── db/             # SQLAlchemy models and session helpers
 │   ├── schemas/        # Pydantic request/response models
 │   ├── services/       # Business logic & backup utilities
+│   │   └── adapters/   # Provider adapters (OpenAI, Claude, etc.)
 │   └── main.py         # FastAPI application entry point
 ├── pyproject.toml      # Backend Python dependencies
 └── tests/              # pytest suite
@@ -239,6 +242,86 @@ Model routes define strategies for selecting providers and models based on diffe
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/ping` | Simple liveness probe |
+
+### OpenAI-Compatible Chat Completions
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | OpenAI-compatible chat completions endpoint |
+
+#### Chat Completion Request
+
+```json
+{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello, how are you?"}
+  ],
+  "temperature": 0.7,
+  "max_tokens": 150,
+  "stream": false
+}
+```
+
+#### Chat Completion Response
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "gpt-3.5-turbo",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! I'm doing well, thank you for asking. How can I assist you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 18,
+    "total_tokens": 38
+  }
+}
+```
+
+#### Usage Examples
+
+**Basic Chat Completion:**
+```bash
+curl -X POST "http://localhost:8000/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+**With Temperature and Max Tokens:**
+```bash
+curl -X POST "http://localhost:8000/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [
+      {"role": "system", "content": "You are a creative writer."},
+      {"role": "user", "content": "Write a short poem about AI."}
+    ],
+    "temperature": 0.8,
+    "max_tokens": 100
+  }'
+```
+
+**Notes:**
+- The endpoint automatically routes requests to appropriate providers based on model selection and routing configuration
+- Streaming (`stream: true`) is not yet supported and will return a 400 error
+- The system supports automatic fallback to alternative providers when the primary provider fails
+- Model selection is handled through the routing engine - configure routes to map models to specific providers
 
 ## Testing
 
