@@ -653,6 +653,9 @@ class TestHealthCheckIntegration:
     ) -> None:
         service = get_routing_service()
 
+        # Add gpt-4 to anthropic provider for this test
+        provider_anthropic.models.append("gpt-4")
+        
         payload = ModelRouteCreate(
             name="health-aware-specific-route",
             mode="specific",

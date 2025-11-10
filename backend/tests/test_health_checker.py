@@ -221,12 +221,15 @@ def test_health_fields_persist_in_backup_and_restore(db_session, settings):
     import json
     from backend.app.services.backup import restore_from_backup
 
+    from backend.app.services.backup import write_backup
+    
     payload = ProviderCreate(**_sample_payload(name="Backup Test Provider"))
     provider = provider_service.create_provider(db_session, payload)
 
     provider.consecutive_failures = 2
     provider.is_healthy = False
     db_session.commit()
+    write_backup(db_session)
 
     backup_path = settings.backup_path
     backup = json.loads(backup_path.read_text())
