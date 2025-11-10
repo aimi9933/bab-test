@@ -4,10 +4,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .api.routes.admin import router as admin_router
+from .api.routes.chat import router as chat_router
 from .api.routes.providers import router as providers_router
 from .api.routes.routes import router as routes_router
 from .core.config import get_settings
 from .db.init_db import init_db
+from .services.chat_completions import ChatCompletionError
 from .services.providers import (
     ProviderConnectivityError,
     ProviderNotFoundError,
@@ -73,6 +75,11 @@ async def handle_route_service_error(request: Request, exc: RouteServiceError) -
     return _create_error_response(400, str(exc))
 
 
+@app.exception_handler(ChatCompletionError)
+async def handle_chat_completion_error(request: Request, exc: ChatCompletionError) -> JSONResponse:
+    return _create_error_response(exc.status_code, exc.message)
+
+
 @app.get("/ping")
 async def ping() -> dict[str, str]:
     return {"status": "ok"}
@@ -81,3 +88,4 @@ async def ping() -> dict[str, str]:
 app.include_router(providers_router)
 app.include_router(admin_router)
 app.include_router(routes_router)
+app.include_router(chat_router)
