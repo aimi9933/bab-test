@@ -21,6 +21,8 @@ def _serialize_provider(provider: ExternalAPI) -> dict:
         "status": provider.status,
         "latency_ms": provider.latency_ms,
         "last_tested_at": provider.last_tested_at.isoformat() if provider.last_tested_at else None,
+        "consecutive_failures": provider.consecutive_failures,
+        "is_healthy": provider.is_healthy,
         "created_at": provider.created_at.isoformat() if provider.created_at else None,
         "updated_at": provider.updated_at.isoformat() if provider.updated_at else None,
     }
@@ -101,6 +103,8 @@ def restore_from_backup(session: Session) -> dict[str, int]:
             "status": item.get("status", "unknown"),
             "latency_ms": item.get("latency_ms"),
             "last_tested_at": _parse_datetime(item.get("last_tested_at")),
+            "consecutive_failures": item.get("consecutive_failures", 0),
+            "is_healthy": item.get("is_healthy", True),
         }
         if provider is None:
             provider = ExternalAPI(name=name, **attrs)

@@ -65,6 +65,8 @@ describe('ProviderFormModal', () => {
       status: 'online',
       latencyMs: 120,
       lastTestedAt: '2024-05-01T00:00:00.000Z',
+      consecutiveFailures: 0,
+      isHealthy: true,
       createdAt: '2024-04-01T00:00:00.000Z',
       updatedAt: '2024-04-10T00:00:00.000Z',
     };

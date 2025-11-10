@@ -163,7 +163,10 @@ class RoutingService:
     def _select_auto(
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
     ) -> tuple[int, str]:
-        active_nodes = [n for n in route.route_nodes if session.get(ExternalAPI, n.api_id).is_active]
+        active_nodes = [
+            n for n in route.route_nodes
+            if session.get(ExternalAPI, n.api_id).is_active and session.get(ExternalAPI, n.api_id).is_healthy
+        ]
         if not active_nodes:
             raise RouteServiceError(f"No active providers in route '{route.name}'")
 
@@ -178,7 +181,7 @@ class RoutingService:
 
         for node in route.route_nodes:
             provider = session.get(ExternalAPI, node.api_id)
-            if not provider or not provider.is_active:
+            if not provider or not provider.is_active or not provider.is_healthy:
                 continue
             node_models = node.models or provider.models or []
             if model_hint in node_models:
@@ -190,7 +193,10 @@ class RoutingService:
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
     ) -> tuple[int, str]:
         active_nodes = sorted(
-            [n for n in route.route_nodes if session.get(ExternalAPI, n.api_id).is_active],
+            [
+                n for n in route.route_nodes
+                if session.get(ExternalAPI, n.api_id).is_active and session.get(ExternalAPI, n.api_id).is_healthy
+            ],
             key=lambda n: n.priority
         )
 

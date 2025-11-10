@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ...db.session import get_db
@@ -11,6 +12,11 @@ from ...schemas.provider import (
     ProviderUpdate,
 )
 from ...services import providers as provider_service
+from ...services.backup import write_backup
+
+
+class HealthOverrideRequest(BaseModel):
+    is_healthy: bool
 
 router = APIRouter(prefix="/api/providers", tags=["providers"])
 
@@ -57,3 +63,18 @@ async def test_provider(
 ) -> ProviderTestResponse:
     result = await provider_service.test_provider_connectivity(db, provider_id, timeout)
     return ProviderTestResponse(**result)
+
+
+@router.patch("/{provider_id}/health", response_model=ProviderRead)
+def set_provider_health(
+    provider_id: int,
+    payload: HealthOverrideRequest,
+    db: Session = Depends(get_db),
+) -> ProviderRead:
+    provider = provider_service.get_provider(db, provider_id)
+    provider.is_healthy = payload.is_healthy
+    provider.consecutive_failures = 0
+    db.commit()
+    db.refresh(provider)
+    write_backup(db)
+    return provider

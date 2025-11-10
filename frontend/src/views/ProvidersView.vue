@@ -27,6 +27,7 @@
       @edit="openEditModal"
       @delete="openDeleteDialog"
       @test="performTest"
+      @health-toggle="toggleHealth"
     />
 
     <ProviderFormModal
@@ -84,6 +85,7 @@ const {
   updateProvider,
   deleteProvider,
   testProvider,
+  toggleProviderHealth,
   clearFeedback,
 } = useProviders();
 
@@ -170,6 +172,14 @@ const confirmDialogClose = () => {
 const performTest = async (provider: Provider) => {
   try {
     await testProvider(provider.id);
+  } catch (err) {
+    // error surfaced through global error banner
+  }
+};
+
+const toggleHealth = async (provider: Provider) => {
+  try {
+    await toggleProviderHealth(provider);
   } catch (err) {
     // error surfaced through global error banner
   }

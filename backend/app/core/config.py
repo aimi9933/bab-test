@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     api_key_secret: str = Field(default="change-me", description="Secret used to encrypt API keys")
     backup_file: str = Field(default="backend/config_backup.json")
     request_timeout_seconds: float = Field(default=10.0, ge=0.1)
+    health_check_enabled: bool = Field(default=True, description="Enable automatic health checks")
+    health_check_interval_seconds: float = Field(default=60.0, ge=1.0, description="Interval between health checks in seconds")
+    health_check_timeout_seconds: float = Field(default=5.0, ge=0.1, description="Timeout for individual health checks")
+    health_check_failure_threshold: int = Field(default=3, ge=1, description="Consecutive failures before marking provider unhealthy")
 
     def ensure_directories(self) -> None:
         """Create directories for configured paths when necessary."""

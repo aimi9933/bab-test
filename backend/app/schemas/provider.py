@@ -52,6 +52,8 @@ class ProviderRead(ProviderBase):
     status: str
     latency_ms: Optional[float]
     last_tested_at: Optional[datetime]
+    consecutive_failures: int
+    is_healthy: bool
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 

@@ -7,6 +7,8 @@ export interface ProviderResponse {
   status: string;
   latency_ms: number | null;
   last_tested_at: string | null;
+  consecutive_failures: number;
+  is_healthy: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -20,6 +22,8 @@ export interface Provider {
   status: string;
   latencyMs: number | null;
   lastTestedAt: string | null;
+  consecutiveFailures: number;
+  isHealthy: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }

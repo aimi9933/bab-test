@@ -6,8 +6,11 @@ This repository now includes a FastAPI backend for managing external Large Langu
 
 - CRUD API for managing external LLM providers
 - Encrypted storage for provider API keys using a secret key
+- **Automated health checks** with background task scheduling and health status tracking
+- **Routing with health awareness** - automatically skips unhealthy providers and triggers failover
 - Automated JSON backups of provider inventory on create/update/delete
 - Connectivity test endpoint that reports status and latency
+- Manual health overrides for provider enable/disable
 - Backup restore via admin API or CLI helper
 - SQLite persistence with environment-driven configuration
 - Comprehensive pytest-based unit and integration tests
@@ -42,6 +45,10 @@ The backend is configured via environment variables (optionally through a `.env`
 | `BACKEND_API_KEY_SECRET` | Secret used to encrypt provider API keys | `change-me` |
 | `BACKEND_BACKUP_FILE` | Path to the JSON backup | `backend/config_backup.json` |
 | `BACKEND_REQUEST_TIMEOUT_SECONDS` | Default timeout for provider tests | `10.0` |
+| `BACKEND_HEALTH_CHECK_ENABLED` | Enable automatic background health checks | `true` |
+| `BACKEND_HEALTH_CHECK_INTERVAL_SECONDS` | Interval between health checks | `60.0` |
+| `BACKEND_HEALTH_CHECK_TIMEOUT_SECONDS` | Timeout for individual health check requests | `5.0` |
+| `BACKEND_HEALTH_CHECK_FAILURE_THRESHOLD` | Consecutive failures before marking unhealthy | `3` |
 
 > **Important:** Change `BACKEND_API_KEY_SECRET` in production environments to ensure encrypted API keys can be decrypted between deployments.
 
@@ -128,6 +135,7 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
 | `PATCH` | `/api/providers/{id}` | Update provider details (name, URL, models, API key, status) |
 | `DELETE` | `/api/providers/{id}` | Remove a provider |
 | `POST` | `/api/providers/{id}/test` | Run a connectivity/health check against the provider |
+| `PATCH` | `/api/providers/{id}/health` | Manually override provider health status |
 
 #### Create Provider Payload
 
@@ -151,6 +159,75 @@ python -m backend.app.cli --restore  # Restore providers from the backup file
   "detail": null
 }
 ```
+
+#### Health Override Payload
+
+```json
+{
+  "is_healthy": false
+}
+```
+
+### Health Monitoring
+
+The system includes automated health checking that periodically probes each active provider and updates its health status:
+
+#### How It Works
+
+1. **Background Task**: On startup, a health check background task is initiated and runs at the configured interval (`BACKEND_HEALTH_CHECK_INTERVAL_SECONDS`).
+2. **Probing**: Each active provider is pinged using an HTTP GET request to its base URL with appropriate authentication headers.
+3. **Status Updates**: Provider status is updated based on the probe result:
+   - `online`: HTTP 2xx response
+   - `degraded`: HTTP 3xx/4xx/5xx response
+   - `timeout`: Request exceeded timeout
+   - `unreachable`: Connection error
+   - `error`: Unexpected error during check
+4. **Failure Tracking**: Consecutive failures are tracked. Once failures exceed the threshold (`BACKEND_HEALTH_CHECK_FAILURE_THRESHOLD`), the provider is marked as unhealthy.
+5. **Recovery**: A successful check resets the failure count to 0.
+
+#### Provider Response Fields
+
+Each provider includes health-related fields:
+
+```json
+{
+  "id": 1,
+  "name": "OpenAI",
+  "base_url": "https://api.openai.com/v1",
+  "models": ["gpt-4", "gpt-3.5-turbo"],
+  "is_active": true,
+  "status": "online",
+  "latency_ms": 45.2,
+  "last_tested_at": "2024-01-15T10:30:00+00:00",
+  "consecutive_failures": 0,
+  "is_healthy": true,
+  "created_at": "2024-01-10T08:00:00+00:00",
+  "updated_at": "2024-01-15T10:30:00+00:00"
+}
+```
+
+#### Routing Integration
+
+Routing automatically considers health status:
+
+- **Round-robin and Specific modes**: Skip unhealthy providers; if all providers are unhealthy, routing fails with an error.
+- **Multi mode**: Prioritizes healthy providers; falls back through priority order, skipping unhealthy ones.
+- **Failover strategy**: If a provider becomes unhealthy, the next provider in order is automatically selected.
+
+#### Manual Overrides
+
+To manually override a provider's health status (e.g., for maintenance):
+
+```bash
+PATCH /api/providers/{id}/health
+Content-Type: application/json
+
+{
+  "is_healthy": false
+}
+```
+
+This marks the provider as unhealthy and resets its failure count, allowing graceful degradation during maintenance windows.
 
 ### Model Route Management
 

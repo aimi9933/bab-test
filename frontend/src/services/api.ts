@@ -39,6 +39,8 @@ const mapProvider = (payload: ProviderResponse): Provider => ({
   status: payload.status,
   latencyMs: payload.latency_ms,
   lastTestedAt: payload.last_tested_at,
+  consecutiveFailures: payload.consecutive_failures,
+  isHealthy: payload.is_healthy,
   createdAt: payload.created_at,
   updatedAt: payload.updated_at,
 });
@@ -76,6 +78,12 @@ export const api = {
       },
     );
     return mapTestResult(data);
+  },
+  async setProviderHealth(id: number, isHealthy: boolean): Promise<Provider> {
+    const { data } = await apiClient.patch<ProviderResponse>(`/api/providers/${id}/health`, {
+      is_healthy: isHealthy,
+    });
+    return mapProvider(data);
   },
 };
 
