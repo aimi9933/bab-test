@@ -7,6 +7,7 @@
       </div>
       <nav class="app-navbar__actions" aria-label="Primary navigation">
         <RouterLink class="app-navbar__link" to="/">Providers</RouterLink>
+        <RouterLink class="app-navbar__link" to="/observability">Observability</RouterLink>
       </nav>
     </header>
     <main class="page-shell">
