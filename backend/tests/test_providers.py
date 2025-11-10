@@ -448,10 +448,10 @@ def test_connectivity_with_url_normalization(client, monkeypatch):
     )
     assert response2.status_code == 200
     
-    # Both should result in the same normalized URL
+    # Both should result in the same normalized URL with /models endpoint
     assert len(tracking_client.urls_requested) == 2
-    assert tracking_client.urls_requested[0] == "https://api.mistral.ai/v1"
-    assert tracking_client.urls_requested[1] == "https://api.mistral.ai/v1"
+    assert tracking_client.urls_requested[0] == "https://api.mistral.ai/v1/models"
+    assert tracking_client.urls_requested[1] == "https://api.mistral.ai/v1/models"
     assert tracking_client.urls_requested[0] == tracking_client.urls_requested[1]
 
 
