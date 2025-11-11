@@ -351,7 +351,19 @@ const getSelectedAutoProvider = (): Provider | null => {
 const currentProviderModels = computed(() => {
   if (form.mode === 'auto') {
     const provider = getSelectedAutoProvider();
-    return provider?.models || [];
+    if (provider) {
+      return provider.models || [];
+    } else if (autoConfig.providerMode === 'all') {
+      // When using all providers, aggregate models from all active providers
+      const allModels = new Set<string>();
+      providers.value.forEach(p => {
+        if (p.isActive && p.models) {
+          p.models.forEach(m => allModels.add(m));
+        }
+      });
+      return Array.from(allModels).sort();
+    }
+    return [];
   } else if (form.mode === 'specific') {
     const provider = providers.value.find(p => p.id === specificConfig.selectedProviderId);
     return provider?.models || [];
