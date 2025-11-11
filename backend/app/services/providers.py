@@ -174,7 +174,8 @@ async def test_provider_connectivity(
     decrypted_key = decrypt_api_key(provider.api_key_encrypted)
     headers = {"Authorization": f"Bearer {decrypted_key}"} if decrypted_key else {}
 
-    url = normalize_base_url(provider.base_url)
+    # Test the /models endpoint instead of base URL
+    url = construct_api_url(provider.base_url, "/models")
     start = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=request_timeout, follow_redirects=True) as client:
@@ -221,7 +222,8 @@ async def test_provider_direct(
 
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
 
-    url = normalize_base_url(base_url)
+    # Test the /models endpoint instead of base URL
+    url = construct_api_url(base_url, "/models")
     start = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=request_timeout, follow_redirects=True) as client:

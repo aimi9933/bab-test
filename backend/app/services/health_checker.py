@@ -97,8 +97,9 @@ class HealthChecker:
         decrypted_key = decrypt_api_key(provider.api_key_encrypted)
         headers = {"Authorization": f"Bearer {decrypted_key}"} if decrypted_key else {}
 
-        from .providers import normalize_base_url
-        url = normalize_base_url(provider.base_url)
+        from .providers import construct_api_url
+        # Test the /models endpoint instead of base URL
+        url = construct_api_url(provider.base_url, "/models")
         start = time.perf_counter()
 
         try:
