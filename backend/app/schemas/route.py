@@ -47,6 +47,7 @@ class RouteNodeUpdate(BaseModel):
 class RouteNodeRead(RouteNodeBase):
     id: int
     route_id: int
+    api_name: Optional[str] = None
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 

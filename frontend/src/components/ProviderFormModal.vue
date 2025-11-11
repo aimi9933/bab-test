@@ -80,7 +80,7 @@
 
           <div class="field-group">
             <label for="provider-api-key">API key</label>
-            <div v-if="mode === 'edit' && provider?.apiKeyMasked && !form.apiKey" class="masked-key-display">
+            <div v-if="mode === 'edit' && provider?.apiKeyMasked && !apiKeyInputVisible" class="masked-key-display">
               <span class="masked-key">{{ provider.apiKeyMasked }}</span>
               <button type="button" class="btn btn-small btn-secondary" @click="showApiKeyInput" :disabled="busy">
                 Update
@@ -97,7 +97,7 @@
               :placeholder="mode === 'edit' ? 'Enter new API key or leave blank to keep existing' : 'sk-live-***'"
             />
             <p v-if="fieldError('apiKey')" class="error-text">{{ fieldError('apiKey') }}</p>
-            <p v-if="mode === 'edit' && provider?.apiKeyMasked && !form.apiKey" class="help-text">
+            <p v-if="mode === 'edit' && provider?.apiKeyMasked && !apiKeyInputVisible" class="help-text">
               API key is saved and masked for security. Click "Update" to change it.
             </p>
           </div>
@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { normalizeModels } from '@/composables/useProviders';
 import type { Provider, ProviderFormValues } from '@/types/providers';
 
@@ -161,6 +161,7 @@ const defaultFormValues = (): ProviderFormValues => ({
 });
 
 const form = reactive<ProviderFormValues>(defaultFormValues());
+const apiKeyInputVisible = ref(false);
 
 const localErrors = reactive<Record<FieldKey, string | null>>({
   name: null,
@@ -171,6 +172,7 @@ const localErrors = reactive<Record<FieldKey, string | null>>({
 
 const resetForm = () => {
   Object.assign(form, defaultFormValues());
+  apiKeyInputVisible.value = false;
   resetErrors();
 };
 
@@ -187,11 +189,13 @@ const setFormFromProvider = (provider: Provider) => {
   form.models = provider.models.length > 0 ? [...provider.models] : [''];
   form.isActive = provider.isActive;
   form.apiKey = ''; // Always start with empty to show masked key
+  apiKeyInputVisible.value = false; // Hide API key input initially
   resetErrors();
 };
 
 const showApiKeyInput = () => {
   form.apiKey = ''; // Clear to show input field
+  apiKeyInputVisible.value = true; // Show the input field
 };
 
 watch(
@@ -265,8 +269,17 @@ const validateForm = (): boolean => {
     valid = false;
   }
 
+  // For create mode, API key is always required
   if (props.mode === 'create' && !form.apiKey.trim()) {
     localErrors.apiKey = 'API key is required';
+    valid = false;
+  }
+
+  // For edit mode, API key is only required if the input field is visible
+  // (i.e., user clicked "Update" to change it)
+  if (props.mode === 'edit' && apiKeyInputVisible.value && !form.apiKey.trim()) {
+    // Input is visible but empty - user wants to update with empty key
+    localErrors.apiKey = 'API key is required when updating';
     valid = false;
   }
 
