@@ -36,20 +36,20 @@
               :disabled="busy"
               v-model="form.mode"
             >
-              <option value="auto">Auto - Round-robin through all providers</option>
-              <option value="specific">Specific - Use provider based on model hint</option>
-              <option value="multi">Multi - Priority-based with failover</option>
+              <option value="auto">Auto - Cycle through providers</option>
+              <option value="specific">Specific - Use single provider</option>
+              <option value="multi">Multi - Multiple providers with priority</option>
             </select>
             <p v-if="fieldError('mode')" class="error-text">{{ fieldError('mode') }}</p>
             <div class="help-text">
               <div v-if="form.mode === 'auto'">
-                <strong>Auto Mode:</strong> Automatically cycles through all available providers using round-robin algorithm.
+                <strong>Auto Mode:</strong> Select to cycle through multiple providers or use a specific one.
               </div>
               <div v-else-if="form.mode === 'specific'">
-                <strong>Specific Mode:</strong> Selects provider based on the model hint provided in the request.
+                <strong>Specific Mode:</strong> Select a single provider and choose which models to enable.
               </div>
               <div v-else-if="form.mode === 'multi'">
-                <strong>Multi Mode:</strong> Uses priority-based routing with failover strategies.
+                <strong>Multi Mode:</strong> Add multiple providers with priorities and strategies.
               </div>
             </div>
           </div>
@@ -67,87 +67,160 @@
             </label>
           </div>
 
-          <div v-if="form.mode === 'multi'" class="field-group">
-            <label>Configuration (Optional)</label>
-            <textarea
-              name="config"
-              :disabled="busy"
-              v-model="configText"
-              placeholder='{"default_strategy": "round-robin"}'
-              rows="4"
-            ></textarea>
-            <p v-if="fieldError('config')" class="error-text">{{ fieldError('config') }}</p>
-            <p class="help-text">
-              JSON configuration for multi-mode routing (optional).
-            </p>
+          <!-- Auto Mode: Provider Selection -->
+          <div v-if="form.mode === 'auto'" class="field-group">
+            <label for="auto-provider-mode">Provider Selection</label>
+            <select
+              id="auto-provider-mode"
+              name="autoProviderMode"
+              :disabled="busy || providersLoading"
+              v-model="autoConfig.providerMode"
+            >
+              <option value="all">Use all enabled providers (cycle)</option>
+              <option v-for="provider in availableProviders" :key="provider.id" :value="`provider_${provider.id}`">
+                Use only {{ provider.name }}
+              </option>
+            </select>
           </div>
 
-          <div v-if="form.mode === 'specific' || form.mode === 'multi'" class="field-group">
-            <label>Provider Nodes</label>
+          <!-- Auto/Specific/Multi: Model Selection -->
+          <div v-if="form.mode === 'auto' || form.mode === 'specific'" class="field-group">
+            <div v-if="providersLoading && availableProviders.length === 0" class="loading-state">
+              Loading providers...
+            </div>
+            <div v-else-if="currentProviderModels.length === 0" class="alert error">
+              <span v-if="form.mode === 'auto'">
+                Selected provider has no models. Please choose a different provider.
+              </span>
+              <span v-else>
+                Selected provider has no models.
+              </span>
+            </div>
+            <div v-else>
+              <label>Models to enable</label>
+              <div class="models-checklist">
+                <div v-for="model in currentProviderModels" :key="model" class="checkbox-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      :value="model"
+                      :checked="autoConfig.selectedModels.includes(model)"
+                      :disabled="busy"
+                      @change="toggleAutoModel(model)"
+                    />
+                    <span>{{ model }}</span>
+                  </label>
+                </div>
+              </div>
+              <p v-if="fieldError('models')" class="error-text">{{ fieldError('models') }}</p>
+              <div v-if="autoConfig.selectedModels.length > 0" class="info-box">
+                <strong>Strategy:</strong> 
+                <span v-if="autoConfig.selectedModels.length === 1">
+                  Single (fixed model: <code>{{ autoConfig.selectedModels[0] }}</code>)
+                </span>
+                <span v-else>
+                  Cycle ({{ autoConfig.selectedModels.length }} models: <code>{{ autoConfig.selectedModels.join(', ') }}</code>)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Specific Mode: Provider Selection -->
+          <div v-if="form.mode === 'specific'" class="field-group">
+            <label for="specific-provider">Select Provider</label>
+            <select
+              id="specific-provider"
+              name="specificProvider"
+              :disabled="busy || providersLoading"
+              v-model="specificConfig.selectedProviderId"
+            >
+              <option :value="0">Select a provider</option>
+              <option v-for="provider in availableProviders" :key="provider.id" :value="provider.id">
+                {{ provider.name }}
+              </option>
+            </select>
+            <p v-if="fieldError('provider')" class="error-text">{{ fieldError('provider') }}</p>
+          </div>
+
+          <!-- Multi Mode: Providers List -->
+          <div v-if="form.mode === 'multi'" class="field-group">
+            <label>Configure Providers</label>
             <div v-if="providersLoading && availableProviders.length === 0" class="loading-state">
               Loading providers...
             </div>
             <div v-else-if="availableProviders.length === 0" class="alert error">
               No API providers available. Please add a provider first before configuring routes.
             </div>
-            <div v-else class="nodes-list">
-              <div v-for="(node, index) in form.nodes" :key="index" class="node-item">
-                <div class="field-inline">
+            <div v-else class="multi-providers-list">
+              <div v-for="(providerConfig, index) in multiConfigs" :key="index" class="provider-config-item">
+                <div class="provider-config-header">
                   <div class="field-group">
-                    <label :for="`node-api-${index}`">Provider</label>
+                    <label :for="`multi-provider-${index}`">Provider</label>
                     <select
-                      :id="`node-api-${index}`"
-                      :name="`node-api-${index}`"
+                      :id="`multi-provider-${index}`"
                       :disabled="busy || providersLoading"
-                      v-model="node.apiId"
+                      v-model="providerConfig.providerId"
                     >
-                      <option value="">Select a provider</option>
+                      <option :value="0">Select a provider</option>
                       <option v-for="provider in availableProviders" :key="provider.id" :value="provider.id">
                         {{ provider.name }}
                       </option>
                     </select>
                   </div>
                   <div class="field-group">
-                    <label :for="`node-models-${index}`">Models (comma-separated)</label>
-                    <input
-                      :id="`node-models-${index}`"
-                      :name="`node-models-${index}`"
-                      type="text"
-                      :disabled="busy"
-                      v-model="node.modelsText"
-                      placeholder="gpt-4, gpt-3.5-turbo"
-                    />
-                  </div>
-                  <div class="field-group">
-                    <label :for="`node-strategy-${index}`">Strategy</label>
+                    <label :for="`multi-strategy-${index}`">Strategy</label>
                     <select
-                      :id="`node-strategy-${index}`"
-                      :name="`node-strategy-${index}`"
+                      :id="`multi-strategy-${index}`"
                       :disabled="busy"
-                      v-model="node.strategy"
+                      v-model="providerConfig.strategy"
                     >
                       <option value="round-robin">Round Robin</option>
                       <option value="failover">Failover</option>
                     </select>
                   </div>
                   <div class="field-group">
-                    <label :for="`node-priority-${index}`">Priority</label>
+                    <label :for="`multi-priority-${index}`">Priority</label>
                     <input
-                      :id="`node-priority-${index}`"
-                      :name="`node-priority-${index}`"
+                      :id="`multi-priority-${index}`"
                       type="number"
                       min="0"
                       :disabled="busy"
-                      v-model="node.priority"
+                      v-model.number="providerConfig.priority"
                     />
                   </div>
                 </div>
-                <div class="node-actions">
+                <div v-if="getProviderModels(providerConfig.providerId).length > 0" class="provider-config-models">
+                  <label>Models to enable</label>
+                  <div class="models-checklist">
+                    <div v-for="model in getProviderModels(providerConfig.providerId)" :key="model" class="checkbox-item">
+                      <label>
+                        <input
+                          type="checkbox"
+                          :value="model"
+                          :checked="providerConfig.selectedModels.includes(model)"
+                          :disabled="busy"
+                          @change="toggleMultiModel(index, model)"
+                        />
+                        <span>{{ model }}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div v-if="providerConfig.selectedModels.length > 0" class="info-box">
+                    <strong>Strategy:</strong> 
+                    <span v-if="providerConfig.selectedModels.length === 1">
+                      Single (fixed model: <code>{{ providerConfig.selectedModels[0] }}</code>)
+                    </span>
+                    <span v-else>
+                      Cycle ({{ providerConfig.selectedModels.length }} models)
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-config-actions">
                   <button
                     type="button"
                     class="btn btn-small btn-danger"
-                    :disabled="busy || form.nodes.length === 1"
-                    @click="removeNode(index)"
+                    :disabled="busy || multiConfigs.length === 1"
+                    @click="removeMultiProvider(index)"
                   >
                     Remove
                   </button>
@@ -157,9 +230,9 @@
                 type="button"
                 class="btn btn-secondary"
                 :disabled="busy || availableProviders.length === 0"
-                @click="addNode"
+                @click="addMultiProvider"
               >
-                Add Provider Node
+                Add Provider
               </button>
             </div>
             <p v-if="fieldError('nodes')" class="error-text">{{ fieldError('nodes') }}</p>
@@ -194,7 +267,7 @@ interface Props {
   validationErrors?: Record<string, string[]> | null;
 }
 
-type FieldKey = 'name' | 'mode' | 'config' | 'nodes';
+type FieldKey = 'name' | 'mode' | 'models' | 'provider' | 'nodes';
 
 const props = defineProps<Props>();
 
@@ -205,11 +278,21 @@ const emit = defineEmits<{
   (event: 'submit', values: ModelRouteFormValues): void;
 }>();
 
-interface RouteNodeForm {
-  apiId: number;
-  modelsText: string;
+interface AutoConfig {
+  providerMode: string;
+  selectedModels: string[];
+}
+
+interface SpecificConfig {
+  selectedProviderId: number;
+  selectedModels: string[];
+}
+
+interface MultiProviderConfig {
+  providerId: number;
   strategy: 'round-robin' | 'failover';
   priority: number;
+  selectedModels: string[];
 }
 
 const defaultFormValues = (): ModelRouteFormValues => ({
@@ -221,38 +304,96 @@ const defaultFormValues = (): ModelRouteFormValues => ({
 });
 
 const form = reactive<ModelRouteFormValues>(defaultFormValues());
-const configText = ref('');
+const autoConfig = reactive<AutoConfig>({
+  providerMode: 'all',
+  selectedModels: [],
+});
+const specificConfig = reactive<SpecificConfig>({
+  selectedProviderId: 0,
+  selectedModels: [],
+});
+const multiConfigs = reactive<MultiProviderConfig[]>([]);
 
 const localErrors = reactive<Record<FieldKey, string | null>>({
   name: null,
   mode: null,
-  config: null,
+  models: null,
+  provider: null,
+  nodes: null,
 });
 
 const resetForm = () => {
   Object.assign(form, defaultFormValues());
-  configText.value = '';
+  autoConfig.providerMode = 'all';
+  autoConfig.selectedModels = [];
+  specificConfig.selectedProviderId = 0;
+  specificConfig.selectedModels = [];
+  multiConfigs.length = 0;
   resetLocalErrors();
 };
 
 const resetLocalErrors = () => {
   localErrors.name = null;
   localErrors.mode = null;
-  localErrors.config = null;
+  localErrors.models = null;
+  localErrors.provider = null;
   localErrors.nodes = null;
 };
 
-const addNode = () => {
-  form.nodes.push({
-    apiId: 0,
-    modelsText: '',
+const getSelectedAutoProvider = (): Provider | null => {
+  if (autoConfig.providerMode === 'all') {
+    return null;
+  }
+  const providerId = parseInt(autoConfig.providerMode.replace('provider_', ''), 10);
+  return providers.value.find(p => p.id === providerId) || null;
+};
+
+const currentProviderModels = computed(() => {
+  if (form.mode === 'auto') {
+    const provider = getSelectedAutoProvider();
+    return provider?.models || [];
+  } else if (form.mode === 'specific') {
+    const provider = providers.value.find(p => p.id === specificConfig.selectedProviderId);
+    return provider?.models || [];
+  }
+  return [];
+});
+
+const toggleAutoModel = (model: string) => {
+  const index = autoConfig.selectedModels.indexOf(model);
+  if (index > -1) {
+    autoConfig.selectedModels.splice(index, 1);
+  } else {
+    autoConfig.selectedModels.push(model);
+  }
+};
+
+const toggleMultiModel = (providerIndex: number, model: string) => {
+  const config = multiConfigs[providerIndex];
+  const index = config.selectedModels.indexOf(model);
+  if (index > -1) {
+    config.selectedModels.splice(index, 1);
+  } else {
+    config.selectedModels.push(model);
+  }
+};
+
+const getProviderModels = (providerId: number): string[] => {
+  const provider = providers.value.find(p => p.id === providerId);
+  return provider?.models || [];
+};
+
+const addMultiProvider = () => {
+  multiConfigs.push({
+    providerId: 0,
     strategy: 'round-robin',
-    priority: form.nodes.length,
+    priority: multiConfigs.length,
+    selectedModels: [],
   });
 };
 
-const removeNode = (index: number) => {
-  form.nodes.splice(index, 1);
+const removeMultiProvider = (index: number) => {
+  multiConfigs.splice(index, 1);
 };
 
 const setFormFromRoute = (route: ModelRoute) => {
@@ -260,30 +401,45 @@ const setFormFromRoute = (route: ModelRoute) => {
   form.mode = route.mode;
   form.config = route.config || {};
   form.isActive = route.isActive;
-  form.nodes = route.nodes.map(node => ({
-    apiId: node.apiId,
-    modelsText: node.models.join(', '),
-    strategy: node.strategy,
-    priority: node.priority,
-  }));
-  configText.value = JSON.stringify(route.config || {}, null, 2);
-  resetErrors();
+
+  if (route.mode === 'auto') {
+    const config = route.config as any || {};
+    autoConfig.providerMode = config.providerMode || 'all';
+    autoConfig.selectedModels = config.selectedModels || [];
+  } else if (route.mode === 'specific') {
+    if (route.nodes && route.nodes.length > 0) {
+      specificConfig.selectedProviderId = route.nodes[0].apiId;
+      specificConfig.selectedModels = route.nodes[0].models || [];
+    }
+  } else if (route.mode === 'multi') {
+    multiConfigs.length = 0;
+    if (route.nodes) {
+      route.nodes.forEach(node => {
+        multiConfigs.push({
+          providerId: node.apiId,
+          strategy: node.strategy,
+          priority: node.priority,
+          selectedModels: node.models || [],
+        });
+      });
+    }
+  }
+
+  resetLocalErrors();
 };
 
 watch(
   () => props.visible,
   async (visible) => {
     if (visible) {
-      // Ensure providers are loaded when the modal opens
       await loadProviders();
-      
+
       if (props.mode === 'edit' && props.route) {
         setFormFromRoute(props.route);
       } else {
         resetForm();
-        // Add a default node for specific/multi modes
-        if (form.mode === 'specific' || form.mode === 'multi') {
-          addNode();
+        if (form.mode === 'multi') {
+          addMultiProvider();
         }
       }
     } else {
@@ -305,16 +461,14 @@ watch(
 
 watch(
   () => form.mode,
-  (newMode, oldMode) => {
-    // Add a default node when switching to specific/multi mode from auto
-    if ((newMode === 'specific' || newMode === 'multi') && 
-        (oldMode === 'auto' || oldMode === undefined) && 
-        form.nodes.length === 0) {
-      addNode();
-    }
-    // Clear nodes when switching to auto mode
-    if (newMode === 'auto' && form.nodes.length > 0) {
-      form.nodes = [];
+  (newMode) => {
+    if (newMode === 'auto') {
+      autoConfig.selectedModels = [];
+    } else if (newMode === 'specific') {
+      specificConfig.selectedModels = [];
+    } else if (newMode === 'multi') {
+      multiConfigs.length = 0;
+      addMultiProvider();
     }
   },
 );
@@ -342,44 +496,37 @@ const validateForm = (): boolean => {
     valid = false;
   }
 
-  // Validate config JSON if provided
-  if (form.mode === 'multi' && configText.value.trim()) {
-    try {
-      form.config = JSON.parse(configText.value);
-    } catch (error) {
-      localErrors.config = 'Invalid JSON configuration';
+  if (form.mode === 'auto') {
+    if (autoConfig.selectedModels.length === 0) {
+      localErrors.models = 'At least one model must be enabled';
       valid = false;
     }
-  } else {
-    form.config = {};
-  }
-
-  // Validate nodes for specific and multi modes
-  if ((form.mode === 'specific' || form.mode === 'multi') && form.nodes.length === 0) {
-    localErrors.nodes = 'At least one provider node is required for specific/multi modes';
-    valid = false;
-  }
-
-  // Validate each node
-  for (let i = 0; i < form.nodes.length; i++) {
-    const node = form.nodes[i];
-    if (!node.apiId) {
-      localErrors.nodes = `Node ${i + 1}: Provider is required`;
+  } else if (form.mode === 'specific') {
+    if (!specificConfig.selectedProviderId) {
+      localErrors.provider = 'A provider must be selected';
       valid = false;
-      break;
     }
-    if (node.modelsText.trim()) {
-      const models = node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0);
-      if (models.length === 0) {
-        localErrors.nodes = `Node ${i + 1}: At least one model is required`;
+    if (specificConfig.selectedModels.length === 0) {
+      localErrors.models = 'At least one model must be enabled';
+      valid = false;
+    }
+  } else if (form.mode === 'multi') {
+    if (multiConfigs.length === 0) {
+      localErrors.nodes = 'At least one provider must be added';
+      valid = false;
+    }
+    for (let i = 0; i < multiConfigs.length; i++) {
+      const config = multiConfigs[i];
+      if (!config.providerId) {
+        localErrors.nodes = `Provider ${i + 1}: A provider must be selected`;
         valid = false;
         break;
       }
-      node.models = models;
-    } else {
-      localErrors.nodes = `Node ${i + 1}: Models are required`;
-      valid = false;
-      break;
+      if (config.selectedModels.length === 0) {
+        localErrors.nodes = `Provider ${i + 1}: At least one model must be enabled`;
+        valid = false;
+        break;
+      }
     }
   }
 
@@ -419,21 +566,41 @@ const handleSubmit = () => {
     return;
   }
 
-  // Convert form nodes to backend format (only for specific/multi modes)
   let nodes = [];
-  if (form.mode === 'specific' || form.mode === 'multi') {
-    nodes = form.nodes.map(node => ({
-      apiId: node.apiId,
-      models: node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0),
-      strategy: node.strategy,
-      priority: node.priority,
+  let config: Record<string, any> = {};
+
+  if (form.mode === 'auto') {
+    config = {
+      providerMode: autoConfig.providerMode,
+      selectedModels: autoConfig.selectedModels,
+      modelStrategy: autoConfig.selectedModels.length === 1 ? 'single' : 'cycle',
+    };
+  } else if (form.mode === 'specific') {
+    config = {
+      selectedModels: specificConfig.selectedModels,
+      modelStrategy: specificConfig.selectedModels.length === 1 ? 'single' : 'cycle',
+    };
+    nodes = [
+      {
+        apiId: specificConfig.selectedProviderId,
+        models: specificConfig.selectedModels,
+        strategy: 'round-robin',
+        priority: 0,
+      },
+    ];
+  } else if (form.mode === 'multi') {
+    nodes = multiConfigs.map(config => ({
+      apiId: config.providerId,
+      models: config.selectedModels,
+      strategy: config.strategy,
+      priority: config.priority,
     }));
   }
 
   const sanitized: ModelRouteFormValues = {
     name: form.name.trim(),
     mode: form.mode,
-    config: form.config,
+    config,
     isActive: form.isActive,
     nodes,
   };
@@ -508,5 +675,86 @@ select:focus {
   text-align: center;
   color: #6c757d;
   font-style: italic;
+}
+
+.models-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.info-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: #e0f2fe;
+  border-left: 3px solid #0284c7;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #0c4a6e;
+}
+
+.info-box code {
+  background-color: rgba(2, 132, 199, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.multi-providers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.provider-config-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.provider-config-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.provider-config-models {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.provider-config-actions {
+  margin-top: 1rem;
+  text-align: right;
+}
+
+.field-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
 }
 </style>

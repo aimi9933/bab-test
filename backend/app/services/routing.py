@@ -70,15 +70,16 @@ class RoutingService:
         session.add(route)
         session.flush()
 
-        api_ids = [node.api_id for node in payload.nodes]
-        self._validate_providers_exist(session, api_ids)
+        if payload.nodes:
+            api_ids = [node.api_id for node in payload.nodes]
+            self._validate_providers_exist(session, api_ids)
 
-        for node_payload in payload.nodes:
-            self._validate_models_exist(session, node_payload.api_id, node_payload.models)
+            for node_payload in payload.nodes:
+                self._validate_models_exist(session, node_payload.api_id, node_payload.models)
 
-            node_data = node_payload.model_dump()
-            node = RouteNode(route_id=route.id, **node_data)
-            session.add(node)
+                node_data = node_payload.model_dump()
+                node = RouteNode(route_id=route.id, **node_data)
+                session.add(node)
 
         session.commit()
         session.refresh(route)
@@ -90,9 +91,6 @@ class RoutingService:
         ).get(route_id)
         if route is None:
             raise RouteNotFoundError(f"Route with id {route_id} not found")
-        print(f"DEBUG: Route {route_id} has {len(route.route_nodes)} nodes")
-        for i, node in enumerate(route.route_nodes):
-            print(f"DEBUG: Node {i}: api_id={node.api_id}, models={node.models}")
         return route
 
     def list_routes(self, session: Session) -> list[ModelRoute]:
@@ -127,15 +125,16 @@ class RoutingService:
             session.query(RouteNode).filter(RouteNode.route_id == route_id).delete()
             session.flush()
 
-            api_ids = [node.api_id for node in payload.nodes]
-            self._validate_providers_exist(session, api_ids)
+            if payload.nodes:
+                api_ids = [node.api_id for node in payload.nodes]
+                self._validate_providers_exist(session, api_ids)
 
-            for node_payload in payload.nodes:
-                self._validate_models_exist(session, node_payload.api_id, node_payload.models)
+                for node_payload in payload.nodes:
+                    self._validate_models_exist(session, node_payload.api_id, node_payload.models)
 
-                node_data = node_payload.model_dump()
-                node = RouteNode(route_id=route_id, **node_data)
-                session.add(node)
+                    node_data = node_payload.model_dump()
+                    node = RouteNode(route_id=route_id, **node_data)
+                    session.add(node)
 
         session.commit()
         session.refresh(route)
@@ -155,14 +154,13 @@ class RoutingService:
         if not route.is_active:
             raise RouteServiceError(f"Route '{route.name}' is not active")
 
-        if not route.route_nodes:
-            raise RouteServiceError(f"Route '{route.name}' has no configured nodes")
-
         if route.mode == "auto":
             return self._select_auto(session, route, model_hint)
         elif route.mode == "specific":
             return self._select_specific(session, route, model_hint)
         elif route.mode == "multi":
+            if not route.route_nodes:
+                raise RouteServiceError(f"Route '{route.name}' has no configured nodes")
             return self._select_multi(session, route, model_hint)
         else:
             raise RouteServiceError(f"Unknown route mode: {route.mode}")
@@ -170,6 +168,16 @@ class RoutingService:
     def _select_auto(
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
     ) -> tuple[int, str]:
+        config = route.config or {}
+        selected_models = config.get('selectedModels', [])
+        provider_mode = config.get('providerMode', 'all')
+        
+        if selected_models:
+            return self._select_auto_with_config(session, route, selected_models, provider_mode, model_hint)
+        
+        if not route.route_nodes:
+            raise RouteServiceError(f"Route '{route.name}' has no configured nodes and no models in config")
+        
         active_nodes = [
             n for n in route.route_nodes
             if session.get(ExternalAPI, n.api_id).is_active and session.get(ExternalAPI, n.api_id).is_healthy
@@ -183,6 +191,15 @@ class RoutingService:
     def _select_specific(
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
     ) -> tuple[int, str]:
+        config = route.config or {}
+        selected_models = config.get('selectedModels', [])
+        
+        if selected_models:
+            return self._select_specific_with_config(session, route, selected_models, model_hint)
+        
+        if not route.route_nodes:
+            raise RouteServiceError(f"Route '{route.name}' has no configured nodes")
+        
         if not model_hint:
             raise RouteServiceError(f"Route '{route.name}' in 'specific' mode requires a model hint")
 
@@ -257,6 +274,75 @@ class RoutingService:
                 raise RouteServiceError(f"Model '{model_hint}' not available in provider '{provider.name}'")
 
         return provider.id, node_models[0]
+
+    def _select_auto_with_config(
+        self, session: Session, route: ModelRoute, selected_models: list[str],
+        provider_mode: str, model_hint: Optional[str] = None
+    ) -> tuple[int, str]:
+        if provider_mode == 'all':
+            active_providers = [
+                p for p in session.query(ExternalAPI).filter(
+                    ExternalAPI.is_active == True,
+                    ExternalAPI.is_healthy == True
+                ).all()
+            ]
+            if not active_providers:
+                raise RouteServiceError(f"No active providers in route '{route.name}'")
+            
+            selected_provider = self._apply_round_robin_to_providers(route.id, active_providers)
+        else:
+            provider_id = int(provider_mode.replace('provider_', ''))
+            provider = session.get(ExternalAPI, provider_id)
+            if not provider or not provider.is_active or not provider.is_healthy:
+                raise RouteServiceError(f"Provider {provider_id} is not active or healthy in route '{route.name}'")
+            selected_provider = provider
+        
+        if model_hint:
+            if model_hint in selected_models:
+                return selected_provider.id, model_hint
+            else:
+                raise RouteServiceError(f"Model '{model_hint}' not in configured models for route '{route.name}'")
+        
+        return selected_provider.id, self._pick_model_from_config(selected_models)
+
+    def _select_specific_with_config(
+        self, session: Session, route: ModelRoute, selected_models: list[str],
+        model_hint: Optional[str] = None
+    ) -> tuple[int, str]:
+        if not route.route_nodes:
+            raise RouteServiceError(f"Route '{route.name}' has no configured nodes")
+        
+        node = route.route_nodes[0]
+        provider = session.get(ExternalAPI, node.api_id)
+        if not provider or not provider.is_active or not provider.is_healthy:
+            raise RouteServiceError(f"Provider for route '{route.name}' is not active or healthy")
+        
+        if model_hint:
+            if model_hint in selected_models:
+                return provider.id, model_hint
+            else:
+                raise RouteServiceError(f"Model '{model_hint}' not in configured models for route '{route.name}'")
+        
+        return provider.id, self._pick_model_from_config(selected_models)
+
+    def _pick_model_from_config(self, selected_models: list[str]) -> str:
+        if not selected_models:
+            raise RouteServiceError("No models configured for selection")
+        return selected_models[0]
+
+    def _apply_round_robin_to_providers(
+        self, route_id: int, providers: list[ExternalAPI]
+    ) -> ExternalAPI:
+        if not providers:
+            raise RouteServiceError("No providers available for round-robin selection")
+
+        with self._state_lock:
+            key = f"provider_{route_id}"
+            current_index = self._round_robin_indices.get(key, 0)
+            selected = providers[current_index % len(providers)]
+            self._round_robin_indices[key] = (current_index + 1) % len(providers)
+
+        return selected
 
 
 _routing_service = RoutingService()

@@ -1,3 +1,9 @@
+export interface ModelConfig {
+  selectedModels: string[];
+  modelStrategy: 'single' | 'cycle';
+  providerMode?: string;
+}
+
 export interface ModelRoute {
   id: number;
   name: string;
