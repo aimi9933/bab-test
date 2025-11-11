@@ -1,0 +1,73 @@
+INFO:     Started server process [6058]
+INFO:     Waiting for application startup.
+2025-11-11 00:04:00,141 - backend.app.main - INFO - Starting application
+2025-11-11 00:04:00,152 - backend.app.services.health_checker - INFO - Health checker started
+2025-11-11 00:04:00,152 - backend.app.main - INFO - Application started successfully
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2025-11-11 00:04:03,712 - backend.app.main - INFO - Request started: GET /ping
+2025-11-11 00:04:03,713 - backend.app.main - INFO - Request completed: GET /ping
+INFO:     127.0.0.1:42480 - "GET /ping HTTP/1.1" 200 OK
+2025-11-11 00:04:09,884 - backend.app.main - INFO - Request started: POST /api/providers/1/test
+2025-11-11 00:04:10,208 - backend.app.main - INFO - Request completed: POST /api/providers/1/test
+INFO:     127.0.0.1:52054 - "POST /api/providers/1/test HTTP/1.1" 200 OK
+2025-11-11 00:04:15,905 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:04:15,908 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:52060 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:04:31,986 - backend.app.main - INFO - Request started: GET /api/providers
+2025-11-11 00:04:31,993 - backend.app.main - INFO - Request completed: GET /api/providers
+INFO:     127.0.0.1:41914 - "GET /api/providers HTTP/1.1" 200 OK
+2025-11-11 00:04:53,983 - backend.app.main - INFO - Request started: GET /ping
+2025-11-11 00:04:53,984 - backend.app.main - INFO - Request completed: GET /ping
+INFO:     127.0.0.1:60432 - "GET /ping HTTP/1.1" 200 OK
+2025-11-11 00:04:54,021 - backend.app.main - INFO - Request started: GET /api/providers
+2025-11-11 00:04:54,023 - backend.app.main - INFO - Request completed: GET /api/providers
+INFO:     127.0.0.1:60446 - "GET /api/providers HTTP/1.1" 200 OK
+2025-11-11 00:04:54,056 - backend.app.main - INFO - Request started: POST /api/providers/1/test
+2025-11-11 00:04:54,367 - backend.app.main - INFO - Request completed: POST /api/providers/1/test
+INFO:     127.0.0.1:60452 - "POST /api/providers/1/test HTTP/1.1" 200 OK
+2025-11-11 00:04:54,379 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:04:54,381 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:60458 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:07:40,953 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:07:40,958 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:55250 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:07:41,780 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:07:41,783 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:55258 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:11:15,777 - backend.app.main - INFO - Request started: GET /ping
+2025-11-11 00:11:15,779 - backend.app.main - INFO - Request completed: GET /ping
+INFO:     127.0.0.1:48146 - "GET /ping HTTP/1.1" 200 OK
+2025-11-11 00:11:15,800 - backend.app.main - INFO - Request started: GET /api/providers
+2025-11-11 00:11:15,803 - backend.app.main - INFO - Request completed: GET /api/providers
+INFO:     127.0.0.1:48152 - "GET /api/providers HTTP/1.1" 200 OK
+2025-11-11 00:11:15,810 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:11:15,813 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:48168 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:11:15,818 - backend.app.main - INFO - Request started: POST /api/providers/1/test
+2025-11-11 00:11:16,129 - backend.app.main - INFO - Request completed: POST /api/providers/1/test
+INFO:     127.0.0.1:48184 - "POST /api/providers/1/test HTTP/1.1" 200 OK
+2025-11-11 00:11:16,137 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:11:16,139 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:48192 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:11:16,170 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:11:16,172 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:48204 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:11:16,197 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:11:16,200 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:53638 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:11:16,224 - backend.app.main - INFO - Request started: GET /api/providers
+2025-11-11 00:11:16,226 - backend.app.main - INFO - Request completed: GET /api/providers
+INFO:     127.0.0.1:53648 - "GET /api/providers HTTP/1.1" 200 OK
+2025-11-11 00:11:16,234 - backend.app.main - INFO - Request started: GET /ping
+2025-11-11 00:11:16,235 - backend.app.main - INFO - Request completed: GET /ping
+INFO:     127.0.0.1:53660 - "GET /ping HTTP/1.1" 200 OK
+2025-11-11 00:12:44,212 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:12:44,218 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:36662 - "GET /api/providers/1 HTTP/1.1" 200 OK
+2025-11-11 00:13:27,165 - backend.app.main - INFO - Request started: GET /ping
+2025-11-11 00:13:27,167 - backend.app.main - INFO - Request completed: GET /ping
+INFO:     127.0.0.1:34200 - "GET /ping HTTP/1.1" 200 OK
+2025-11-11 00:13:27,178 - backend.app.main - INFO - Request started: GET /api/providers/1
+2025-11-11 00:13:27,184 - backend.app.main - INFO - Request completed: GET /api/providers/1
+INFO:     127.0.0.1:34208 - "GET /api/providers/1 HTTP/1.1" 200 OK
