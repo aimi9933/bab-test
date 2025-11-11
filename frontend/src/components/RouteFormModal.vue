@@ -81,6 +81,83 @@
               JSON configuration for multi-mode routing (optional).
             </p>
           </div>
+
+          <div v-if="form.mode === 'specific' || form.mode === 'multi'" class="field-group">
+            <label>Provider Nodes</label>
+            <div class="nodes-list">
+              <div v-for="(node, index) in form.nodes" :key="index" class="node-item">
+                <div class="field-inline">
+                  <div class="field-group">
+                    <label :for="`node-api-${index}`">Provider</label>
+                    <select
+                      :id="`node-api-${index}`"
+                      :name="`node-api-${index}`"
+                      :disabled="busy"
+                      v-model="node.apiId"
+                    >
+                      <option value="">Select a provider</option>
+                      <option v-for="provider in availableProviders" :key="provider.id" :value="provider.id">
+                        {{ provider.name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label :for="`node-models-${index}`">Models (comma-separated)</label>
+                    <input
+                      :id="`node-models-${index}`"
+                      :name="`node-models-${index}`"
+                      type="text"
+                      :disabled="busy"
+                      v-model="node.modelsText"
+                      placeholder="gpt-4, gpt-3.5-turbo"
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label :for="`node-strategy-${index}`">Strategy</label>
+                    <select
+                      :id="`node-strategy-${index}`"
+                      :name="`node-strategy-${index}`"
+                      :disabled="busy"
+                      v-model="node.strategy"
+                    >
+                      <option value="round-robin">Round Robin</option>
+                      <option value="failover">Failover</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label :for="`node-priority-${index}`">Priority</label>
+                    <input
+                      :id="`node-priority-${index}`"
+                      :name="`node-priority-${index}`"
+                      type="number"
+                      min="0"
+                      :disabled="busy"
+                      v-model="node.priority"
+                    />
+                  </div>
+                </div>
+                <div class="node-actions">
+                  <button
+                    type="button"
+                    class="btn btn-small btn-danger"
+                    :disabled="busy || form.nodes.length === 1"
+                    @click="removeNode(index)"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                :disabled="busy"
+                @click="addNode"
+              >
+                Add Provider Node
+              </button>
+            </div>
+            <p v-if="fieldError('nodes')" class="error-text">{{ fieldError('nodes') }}</p>
+          </div>
         </div>
         <footer class="modal-footer">
           <button class="btn btn-secondary" type="button" :disabled="busy" @click="$emit('close')">
@@ -99,6 +176,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import type { ModelRoute, ModelRouteFormValues } from '@/types/routes';
+import type { Provider } from '@/types/providers';
+import { useProviders } from '@/composables/useProviders';
 
 interface Props {
   visible: boolean;
@@ -109,20 +188,30 @@ interface Props {
   validationErrors?: Record<string, string[]> | null;
 }
 
-type FieldKey = 'name' | 'mode' | 'config';
+type FieldKey = 'name' | 'mode' | 'config' | 'nodes';
 
 const props = defineProps<Props>();
+
+const { providers } = useProviders();
 
 const emit = defineEmits<{
   (event: 'close'): void;
   (event: 'submit', values: ModelRouteFormValues): void;
 }>();
 
+interface RouteNodeForm {
+  apiId: number;
+  modelsText: string;
+  strategy: 'round-robin' | 'failover';
+  priority: number;
+}
+
 const defaultFormValues = (): ModelRouteFormValues => ({
   name: '',
   mode: 'auto',
   config: {},
   isActive: true,
+  nodes: [],
 });
 
 const form = reactive<ModelRouteFormValues>(defaultFormValues());
@@ -137,13 +226,27 @@ const localErrors = reactive<Record<FieldKey, string | null>>({
 const resetForm = () => {
   Object.assign(form, defaultFormValues());
   configText.value = '';
-  resetErrors();
+  resetLocalErrors();
 };
 
-const resetErrors = () => {
+const resetLocalErrors = () => {
   localErrors.name = null;
   localErrors.mode = null;
   localErrors.config = null;
+  localErrors.nodes = null;
+};
+
+const addNode = () => {
+  form.nodes.push({
+    apiId: 0,
+    modelsText: '',
+    strategy: 'round-robin',
+    priority: form.nodes.length,
+  });
+};
+
+const removeNode = (index: number) => {
+  form.nodes.splice(index, 1);
 };
 
 const setFormFromRoute = (route: ModelRoute) => {
@@ -151,6 +254,12 @@ const setFormFromRoute = (route: ModelRoute) => {
   form.mode = route.mode;
   form.config = route.config || {};
   form.isActive = route.isActive;
+  form.nodes = route.nodes.map(node => ({
+    apiId: node.apiId,
+    modelsText: node.models.join(', '),
+    strategy: node.strategy,
+    priority: node.priority,
+  }));
   configText.value = JSON.stringify(route.config || {}, null, 2);
   resetErrors();
 };
@@ -180,6 +289,8 @@ watch(
   },
 );
 
+const availableProviders = computed(() => providers.value);
+
 const title = computed(() => (props.mode === 'edit' ? 'Edit route' : 'Add route'));
 const subtitle = computed(() =>
   props.mode === 'edit'
@@ -189,7 +300,7 @@ const subtitle = computed(() =>
 
 const validateForm = (): boolean => {
   let valid = true;
-  resetErrors();
+  resetLocalErrors();
 
   if (!form.name.trim()) {
     localErrors.name = 'Route name is required';
@@ -211,6 +322,35 @@ const validateForm = (): boolean => {
     }
   } else {
     form.config = {};
+  }
+
+  // Validate nodes for specific and multi modes
+  if ((form.mode === 'specific' || form.mode === 'multi') && form.nodes.length === 0) {
+    localErrors.nodes = 'At least one provider node is required for specific/multi modes';
+    valid = false;
+  }
+
+  // Validate each node
+  for (let i = 0; i < form.nodes.length; i++) {
+    const node = form.nodes[i];
+    if (!node.apiId) {
+      localErrors.nodes = `Node ${i + 1}: Provider is required`;
+      valid = false;
+      break;
+    }
+    if (node.modelsText.trim()) {
+      const models = node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0);
+      if (models.length === 0) {
+        localErrors.nodes = `Node ${i + 1}: At least one model is required`;
+        valid = false;
+        break;
+      }
+      node.models = models;
+    } else {
+      localErrors.nodes = `Node ${i + 1}: Models are required`;
+      valid = false;
+      break;
+    }
   }
 
   return valid;
@@ -249,11 +389,20 @@ const handleSubmit = () => {
     return;
   }
 
+  // Convert form nodes to backend format
+  const nodes = form.nodes.map(node => ({
+    apiId: node.apiId,
+    models: node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0),
+    strategy: node.strategy,
+    priority: node.priority,
+  }));
+
   const sanitized: ModelRouteFormValues = {
     name: form.name.trim(),
     mode: form.mode,
     config: form.config,
     isActive: form.isActive,
+    nodes,
   };
 
   emit('submit', sanitized);
@@ -269,6 +418,24 @@ const handleSubmit = () => {
 
 .help-text div {
   margin-bottom: 0.25rem;
+}
+
+.nodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.node-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.node-actions {
+  margin-top: 0.5rem;
+  text-align: right;
 }
 
 textarea {

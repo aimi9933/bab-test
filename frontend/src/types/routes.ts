@@ -67,6 +67,7 @@ export interface ModelRouteFormValues {
   mode: 'auto' | 'specific' | 'multi';
   config?: Record<string, any>;
   isActive: boolean;
+  nodes?: RouteNodeFormValues[];
 }
 
 export interface RouteNodeFormValues {
