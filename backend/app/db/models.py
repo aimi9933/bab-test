@@ -102,6 +102,11 @@ class RouteNode(Base):
     route: Mapped[ModelRoute] = relationship("ModelRoute", back_populates="route_nodes")
     api: Mapped[ExternalAPI] = relationship("ExternalAPI", back_populates="route_nodes")
 
+    @property
+    def api_name(self) -> Optional[str]:
+        """Get the API name for this route node."""
+        return self.api.name if self.api else None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,

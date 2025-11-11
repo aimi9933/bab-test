@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from .api.routes.admin import router as admin_router
 from .api.routes.providers import router as providers_router
 from .api.routes.routes import router as routes_router
+from .api.routes.chat import router as chat_router
 from .core.config import get_settings
 from .db.init_db import init_db
 from .services.health_checker import get_health_checker
@@ -176,3 +177,4 @@ async def get_stats() -> dict:
 app.include_router(providers_router)
 app.include_router(admin_router)
 app.include_router(routes_router)
+app.include_router(chat_router)

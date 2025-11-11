@@ -6,6 +6,16 @@ import type {
   ProviderTestResult,
   ProviderUpdatePayload,
 } from '@/types/providers';
+import type {
+  ModelRoute,
+  ModelRouteCreate,
+  ModelRouteUpdate,
+  RouteNode,
+  RouteNodeCreate,
+  RouteNodeUpdate,
+  RoutingSelectionResponse,
+  RoutingStateResponse,
+} from '@/types/routes';
 
 interface ProviderTestResponsePayload {
   status: string;
@@ -129,6 +139,40 @@ export const api = {
     const { data } = await apiClient.get<LogsResponse>('/api/admin/logs', {
       params: { limit },
     });
+    return data;
+  },
+  // Route management APIs
+  async listRoutes(): Promise<ModelRoute[]> {
+    const { data } = await apiClient.get<ModelRoute[]>('/api/model-routes');
+    return data;
+  },
+  async createRoute(payload: ModelRouteCreate): Promise<ModelRoute> {
+    const { data } = await apiClient.post<ModelRoute>('/api/model-routes', payload);
+    return data;
+  },
+  async getRoute(routeId: number): Promise<ModelRoute> {
+    const { data } = await apiClient.get<ModelRoute>(`/api/model-routes/${routeId}`);
+    return data;
+  },
+  async updateRoute(routeId: number, payload: ModelRouteUpdate): Promise<ModelRoute> {
+    const { data } = await apiClient.patch<ModelRoute>(`/api/model-routes/${routeId}`, payload);
+    return data;
+  },
+  async deleteRoute(routeId: number): Promise<void> {
+    await apiClient.delete(`/api/model-routes/${routeId}`);
+  },
+  async selectProviderAndModel(routeId: number, model?: string): Promise<RoutingSelectionResponse> {
+    const { data } = await apiClient.post<RoutingSelectionResponse>(
+      `/api/model-routes/${routeId}/select`,
+      null,
+      {
+        params: model ? { model } : undefined,
+      }
+    );
+    return data;
+  },
+  async getRouteState(routeId: number): Promise<RoutingStateResponse> {
+    const { data } = await apiClient.get<RoutingStateResponse>(`/api/model-routes/${routeId}/state`);
     return data;
   },
 };
