@@ -509,8 +509,10 @@ const validateForm = (): boolean => {
   }
 
   if (form.mode === 'auto') {
-    if (autoConfig.selectedModels.length === 0) {
-      localErrors.models = 'At least one model must be enabled';
+    // Auto mode can work without pre-selected models (will use all available models)
+    // But if models are selected, validate they exist
+    if (autoConfig.providerMode !== 'all' && autoConfig.selectedModels.length === 0) {
+      localErrors.models = 'When using a specific provider, at least one model must be enabled';
       valid = false;
     }
   } else if (form.mode === 'specific') {

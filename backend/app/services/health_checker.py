@@ -94,7 +94,17 @@ class HealthChecker:
         timeout = settings.health_check_timeout_seconds
         failure_threshold = settings.health_check_failure_threshold
 
-        decrypted_key = decrypt_api_key(provider.api_key_encrypted)
+        try:
+            decrypted_key = decrypt_api_key(provider.api_key_encrypted)
+        except Exception as e:
+            logger.error(f"Failed to decrypt API key for provider {provider.name}: {e}")
+            provider.status = "error"
+            provider.latency_ms = None
+            provider.last_tested_at = datetime.now(timezone.utc)
+            provider.consecutive_failures += 1
+            provider.is_healthy = provider.consecutive_failures < failure_threshold
+            return
+
         headers = {"Authorization": f"Bearer {decrypted_key}"} if decrypted_key else {}
 
         from .providers import construct_api_url
@@ -118,6 +128,7 @@ class HealthChecker:
                 provider.status = "degraded"
                 provider.consecutive_failures += 1
                 provider.is_healthy = provider.consecutive_failures < failure_threshold
+                logger.warning(f"Provider {provider.name} returned status {response.status_code}")
 
         except httpx.TimeoutException:
             provider.status = "timeout"
@@ -125,13 +136,15 @@ class HealthChecker:
             provider.last_tested_at = datetime.now(timezone.utc)
             provider.consecutive_failures += 1
             provider.is_healthy = provider.consecutive_failures < failure_threshold
+            logger.warning(f"Provider {provider.name} health check timed out")
 
-        except httpx.RequestError:
+        except httpx.RequestError as e:
             provider.status = "unreachable"
             provider.latency_ms = None
             provider.last_tested_at = datetime.now(timezone.utc)
             provider.consecutive_failures += 1
             provider.is_healthy = provider.consecutive_failures < failure_threshold
+            logger.warning(f"Provider {provider.name} health check failed: {e}")
 
         except Exception as e:
             logger.error(f"Unexpected error checking provider {provider.name}: {e}")

@@ -31,6 +31,7 @@ export interface ModelRouteCreate {
   mode: 'auto' | 'specific' | 'multi';
   config?: Record<string, any>;
   isActive?: boolean;
+  nodes?: RouteNodeCreate[];
 }
 
 export interface ModelRouteUpdate {
@@ -38,6 +39,7 @@ export interface ModelRouteUpdate {
   mode?: 'auto' | 'specific' | 'multi';
   config?: Record<string, any>;
   isActive?: boolean;
+  nodes?: RouteNodeCreate[];
 }
 
 export interface RouteNodeCreate {
