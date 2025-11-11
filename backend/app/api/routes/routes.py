@@ -20,7 +20,40 @@ router = APIRouter(prefix="/api/model-routes", tags=["model-routes"])
 def list_routes(db: Session = Depends(get_db)) -> list[ModelRouteRead]:
     service = get_routing_service()
     routes = service.list_routes(db)
-    return list(routes)
+    
+    # Manual serialization for each route
+    result = []
+    for route in routes:
+        nodes_data = []
+        for node in route.route_nodes:
+            node_dict = {
+                "id": node.id,
+                "route_id": node.route_id,
+                "api_id": node.api_id,
+                "models": node.models,
+                "strategy": node.strategy,
+                "priority": node.priority,
+                "node_metadata": node.node_metadata,
+                "api_name": node.api_name,
+                "created_at": node.created_at,
+                "updated_at": node.updated_at,
+            }
+            nodes_data.append(node_dict)
+        
+        route_dict = {
+            "id": route.id,
+            "name": route.name,
+            "mode": route.mode,
+            "config": route.config,
+            "is_active": route.is_active,
+            "created_at": route.created_at,
+            "updated_at": route.updated_at,
+            "nodes": nodes_data,
+        }
+        
+        result.append(ModelRouteRead(**route_dict))
+    
+    return result
 
 
 @router.post("", response_model=ModelRouteRead, status_code=201)
@@ -34,7 +67,36 @@ def create_route(payload: ModelRouteCreate, db: Session = Depends(get_db)) -> Mo
 def get_route(route_id: int, db: Session = Depends(get_db)) -> ModelRouteRead:
     service = get_routing_service()
     route = service.get_route(db, route_id)
-    return route
+    
+    # Manual serialization to work around the Pydantic issue
+    nodes_data = []
+    for node in route.route_nodes:
+        node_dict = {
+            "id": node.id,
+            "route_id": node.route_id,
+            "api_id": node.api_id,
+            "models": node.models,
+            "strategy": node.strategy,
+            "priority": node.priority,
+            "node_metadata": node.node_metadata,
+            "api_name": node.api_name,
+            "created_at": node.created_at,
+            "updated_at": node.updated_at,
+        }
+        nodes_data.append(node_dict)
+    
+    route_dict = {
+        "id": route.id,
+        "name": route.name,
+        "mode": route.mode,
+        "config": route.config,
+        "is_active": route.is_active,
+        "created_at": route.created_at,
+        "updated_at": route.updated_at,
+        "nodes": nodes_data,
+    }
+    
+    return ModelRouteRead(**route_dict)
 
 
 @router.patch("/{route_id}", response_model=ModelRouteRead)

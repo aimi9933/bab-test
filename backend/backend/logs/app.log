@@ -490,3 +490,158 @@
 {"timestamp": "2025-11-10T14:10:48.308650", "level": "INFO", "logger": "backend.app.main", "message": "Shutting down application", "taskName": "anyio.from_thread.BlockingPortal._call_func"}
 {"timestamp": "2025-11-10T14:10:48.308900", "level": "INFO", "logger": "backend.app.services.health_checker", "message": "Health checker stopped", "taskName": "anyio.from_thread.BlockingPortal._call_func"}
 {"timestamp": "2025-11-10T14:10:48.308959", "level": "INFO", "logger": "backend.app.main", "message": "Application shut down successfully", "taskName": "anyio.from_thread.BlockingPortal._call_func"}
+{"timestamp": "2025-11-11T06:24:16.836266", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:24:16.894318", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:24:16.894476", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:27:47.929307", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:27:47.929643", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:27:47.929753", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:28:55.650755", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:28:55.674332", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:28:55.674499", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:31:12.302712", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/providers", "taskName": "Task-4"}
+{"timestamp": "2025-11-11T06:31:12.395458", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/providers", "taskName": "Task-4"}
+{"timestamp": "2025-11-11T06:31:19.407744", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/providers/1/test", "taskName": "Task-10"}
+{"timestamp": "2025-11-11T06:31:19.882397", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/providers/1/test", "taskName": "Task-10"}
+{"timestamp": "2025-11-11T06:32:33.523306", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/model-routes", "taskName": "Task-20"}
+{"timestamp": "2025-11-11T06:32:33.539829", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/model-routes", "taskName": "Task-20"}
+{"timestamp": "2025-11-11T06:32:40.606454", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/model-routes/1/select", "taskName": "Task-26"}
+{"timestamp": "2025-11-11T06:32:40.614067", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/model-routes/1/select", "taskName": "Task-26"}
+{"timestamp": "2025-11-11T06:33:02.186841", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/model-routes", "taskName": "Task-34"}
+{"timestamp": "2025-11-11T06:33:02.204202", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/model-routes", "taskName": "Task-34"}
+{"timestamp": "2025-11-11T06:33:11.717209", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-40"}
+{"timestamp": "2025-11-11T06:33:11.720316", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-40"}
+{"timestamp": "2025-11-11T06:34:13.960371", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:13.960826", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:13.960947", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:15.577094", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:15.601757", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:15.601930", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:23.436354", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:23.436838", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:23.437015", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:24.690532", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:24.709373", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:24.709570", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:28.332429", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:28.332768", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:28.332872", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:29.670167", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:29.693809", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:29.694234", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:37.032913", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:37.033365", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:37.033495", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:38.505139", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:38.553528", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:38.554037", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:34:50.413143", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:34:50.422049", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:35:03.150585", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:35:03.151047", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:35:03.151240", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:36:09.566656", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:36:09.590236", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:36:09.590385", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:14.414772", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-10"}
+{"timestamp": "2025-11-11T06:37:14.425162", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-10"}
+{"timestamp": "2025-11-11T06:37:35.164126", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:35.164723", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:35.164803", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:36.603046", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:36.626970", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:36.627171", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:47.682036", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:47.682514", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:47.682644", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:49.088070", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:49.109617", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:49.109785", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:56.647031", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:56.647348", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:56.647453", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:58.100853", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:58.124913", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:37:58.125159", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:00.004301", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:00.013694", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:14.995202", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:14.995602", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:14.995708", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:16.512765", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:16.536231", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:16.536410", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:18.876918", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:18.887037", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:31.913784", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:31.914226", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:31.914381", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:33.528171", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:33.554873", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:33.555104", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:36.091782", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:36.104081", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:38:46.919615", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:46.920057", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:46.920169", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:48.539453", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:48.566048", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:38:48.566209", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:02.632107", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:02.632564", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:02.632698", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:04.142529", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:04.170012", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:04.170212", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:13.320162", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:13.320717", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:13.320844", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:14.872036", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:14.907584", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:14.907769", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:18.967776", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:39:18.981809", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:39:28.281436", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:28.282024", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:28.282141", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:29.747216", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:29.769193", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:29.769388", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:32.666480", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:39:32.676833", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:39:58.389608", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:58.390096", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:58.390310", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:59.890576", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:59.918593", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:39:59.918782", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:14.683454", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:14.683785", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:14.683913", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:16.308725", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:16.334696", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:16.334921", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:40:19.567114", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:40:19.579140", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes/2", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:40:29.315091", "level": "INFO", "logger": "app.main", "message": "Request started: POST /api/model-routes/2/select", "taskName": "Task-12"}
+{"timestamp": "2025-11-11T06:40:29.321630", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /api/model-routes/2/select", "taskName": "Task-12"}
+{"timestamp": "2025-11-11T06:40:34.669640", "level": "INFO", "logger": "app.main", "message": "Request started: GET /api/model-routes", "taskName": "Task-17"}
+{"timestamp": "2025-11-11T06:40:34.677126", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /api/model-routes", "taskName": "Task-17"}
+{"timestamp": "2025-11-11T06:42:26.259299", "level": "INFO", "logger": "app.main", "message": "Request started: GET /v1/models", "taskName": "Task-28"}
+{"timestamp": "2025-11-11T06:42:26.266489", "level": "INFO", "logger": "app.main", "message": "Request completed: GET /v1/models", "taskName": "Task-28"}
+{"timestamp": "2025-11-11T06:42:33.242480", "level": "INFO", "logger": "app.main", "message": "Request started: POST /v1/chat/completions", "taskName": "Task-33"}
+{"timestamp": "2025-11-11T06:42:33.256819", "level": "ERROR", "logger": "app.main", "message": "Request failed: POST /v1/chat/completions: cannot import name 'SessionLocal' from 'app.db.session' (/home/engine/project/backend/app/db/session.py)", "exception": "Traceback (most recent call last):\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 159, in call_next\n    message = await recv_stream.receive()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/anyio/streams/memory.py\", line 126, in receive\n    raise EndOfStream from None\nanyio.EndOfStream\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/home/engine/project/backend/app/main.py\", line 63, in logging_and_metrics_middleware\n    response = await call_next(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 165, in call_next\n    raise app_exc\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 151, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/middleware/cors.py\", line 85, in __call__\n    await self.app(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 65, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 64, in wrapped_app\n    raise exc\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/routing.py\", line 756, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/routing.py\", line 776, in app\n    await route.handle(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/routing.py\", line 297, in handle\n    await self.app(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/routing.py\", line 77, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 64, in wrapped_app\n    raise exc\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/starlette/routing.py\", line 72, in app\n    response = await func(request)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/fastapi/routing.py\", line 278, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/venv/lib/python3.12/site-packages/fastapi/routing.py\", line 191, in run_endpoint_function\n    return await dependant.call(**values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/backend/app/api/routes/chat.py\", line 94, in chat_completions\n    route_id = get_default_route_id()\n               ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/engine/project/backend/app/api/routes/chat.py\", line 64, in get_default_route_id\n    from ...db.session import SessionLocal\nImportError: cannot import name 'SessionLocal' from 'app.db.session' (/home/engine/project/backend/app/db/session.py)", "taskName": "Task-33"}
+{"timestamp": "2025-11-11T06:43:04.987589", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:04.987940", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:04.988074", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:06.502089", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:06.528530", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:06.528717", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:09.356699", "level": "INFO", "logger": "app.main", "message": "Shutting down application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:09.357064", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker stopped", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:09.357248", "level": "INFO", "logger": "app.main", "message": "Application shut down successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:10.857458", "level": "INFO", "logger": "app.main", "message": "Starting application", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:10.880211", "level": "INFO", "logger": "app.services.health_checker", "message": "Health checker started", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:10.880365", "level": "INFO", "logger": "app.main", "message": "Application started successfully", "taskName": "Task-2"}
+{"timestamp": "2025-11-11T06:43:22.120294", "level": "INFO", "logger": "app.main", "message": "Request started: POST /v1/chat/completions", "taskName": "Task-7"}
+{"timestamp": "2025-11-11T06:43:22.131974", "level": "INFO", "logger": "app.main", "message": "Request completed: POST /v1/chat/completions", "taskName": "Task-7"}
