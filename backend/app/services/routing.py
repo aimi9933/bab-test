@@ -72,12 +72,10 @@ class RoutingService:
 
         # Validate config-based models for auto/specific modes
         config = route.config or {}
-        if route.mode in ["auto", "specific"] and config.get("selectedModels"):
-            # For auto mode, validate models exist in at least one active provider
-            # For specific mode, we need to check the provider in nodes
-            if route.mode == "auto":
-                provider_mode = config.get("providerMode", "all")
-                selected_models = config.get("selectedModels", [])
+        if route.mode == "auto":
+            provider_mode = config.get("providerMode", "all")
+            selected_models = config.get("selectedModels", [])
+            if selected_models:
                 if provider_mode == "all":
                     # Check all active providers
                     active_providers = session.query(ExternalAPI).filter(ExternalAPI.is_active == True).all()
@@ -94,13 +92,21 @@ class RoutingService:
                     # Check specific provider
                     provider_id = int(provider_mode.replace("provider_", ""))
                     self._validate_models_exist(session, provider_id, selected_models)
+        elif route.mode == "specific":
+            selected_models = config.get("selectedModels", [])
+            if selected_models and payload.nodes:
+                # For specific mode with config, validate against the first node's provider
+                node = payload.nodes[0]
+                self._validate_models_exist(session, node.api_id, selected_models)
 
+        # Create nodes if provided
         if payload.nodes:
             api_ids = [node.api_id for node in payload.nodes]
             self._validate_providers_exist(session, api_ids)
 
             for node_payload in payload.nodes:
-                self._validate_models_exist(session, node_payload.api_id, node_payload.models)
+                if node_payload.models:
+                    self._validate_models_exist(session, node_payload.api_id, node_payload.models)
 
                 node_data = node_payload.model_dump()
                 node = RouteNode(route_id=route.id, **node_data)

@@ -86,6 +86,7 @@ async def chat_completions(
     This endpoint routes requests to configured providers using the routing system.
     """
     from ...services.providers import decrypt_api_key, construct_api_url
+    from ...db.models import ExternalAPI
     
     # Get the routing service
     routing_service = get_routing_service()
@@ -108,7 +109,6 @@ async def chat_completions(
         )
     
     # Get provider details
-    from ...db.models import ExternalAPI
     provider = db.query(ExternalAPI).filter(ExternalAPI.id == provider_id).first()
     if not provider:
         raise HTTPException(
@@ -124,7 +124,14 @@ async def chat_completions(
         )
     
     # Prepare request to external provider
-    decrypted_key = decrypt_api_key(provider.api_key_encrypted)
+    try:
+        decrypted_key = decrypt_api_key(provider.api_key_encrypted)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to decrypt provider API key: {str(e)}"
+        )
+    
     headers = {
         "Authorization": f"Bearer {decrypted_key}",
         "Content-Type": "application/json",
@@ -160,10 +167,20 @@ async def chat_completions(
             response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             result = response.json()
-    except httpx.HTTPError as e:
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Provider returned error: {e.response.text}"
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="Provider request timed out"
+        )
+    except httpx.RequestError as e:
         raise HTTPException(
             status_code=502,
-            detail=f"Provider request failed: {str(e)}"
+            detail=f"Failed to connect to provider: {str(e)}"
         )
     
     # Transform response to match OpenAI format

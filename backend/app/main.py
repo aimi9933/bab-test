@@ -197,3 +197,8 @@ async def catch_all_proxy(path: str, request: Request) -> JSONResponse:
         status_code=404, 
         content={"detail": f"Path /{path} not found. Use /v1/chat/completions for chat requests."}
     )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
