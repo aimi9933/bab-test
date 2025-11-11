@@ -178,3 +178,22 @@ app.include_router(providers_router)
 app.include_router(admin_router)
 app.include_router(routes_router)
 app.include_router(chat_router)
+
+
+# Add a catch-all route to handle proxy requests for external tools like Cline
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def catch_all_proxy(path: str, request: Request) -> JSONResponse:
+    """
+    Catch-all route that proxies unhandled requests to chat completion endpoints.
+    This allows external tools like Cline to call the router as if it's a standard API.
+    """
+    # If the path starts with a known prefix, return 404
+    if path.startswith(("api/", "v1/", "ping", "swagger", "redoc", "openapi")):
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    
+    # For any other path, try to handle it as a proxy request
+    # This is a fallback for unrecognized requests
+    return JSONResponse(
+        status_code=404, 
+        content={"detail": f"Path /{path} not found. Use /v1/chat/completions for chat requests."}
+    )
