@@ -153,7 +153,7 @@ async def chat_completions(
         payload["stop"] = request.stop
     
     # Make request to external provider
-    url = construct_api_url(provider.base_url, "/v1/chat/completions")
+    url = construct_api_url(provider.base_url, "/chat/completions")
     
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
