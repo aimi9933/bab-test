@@ -1,9 +1,11 @@
+npm warn Unknown env config "python". This will stop working in the next major version of npm.
 
 > provider-config-ui@0.1.0 dev
 > vite
 
 
-  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m344[22m[2m[0m ms[22m
+  VITE v5.4.21  ready in 403 ms
 
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.10.1.153:[1m5173[22m/[39m
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://10.16.50.244:5173/
+  ➜  press h + enter to show help
