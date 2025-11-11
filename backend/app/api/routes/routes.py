@@ -60,7 +60,36 @@ def list_routes(db: Session = Depends(get_db)) -> list[ModelRouteRead]:
 def create_route(payload: ModelRouteCreate, db: Session = Depends(get_db)) -> ModelRouteRead:
     service = get_routing_service()
     route = service.create_route(db, payload)
-    return route
+    
+    # Manual serialization to work around the Pydantic issue
+    nodes_data = []
+    for node in route.route_nodes:
+        node_dict = {
+            "id": node.id,
+            "route_id": node.route_id,
+            "api_id": node.api_id,
+            "models": node.models,
+            "strategy": node.strategy,
+            "priority": node.priority,
+            "node_metadata": node.node_metadata,
+            "api_name": node.api_name,
+            "created_at": node.created_at,
+            "updated_at": node.updated_at,
+        }
+        nodes_data.append(node_dict)
+    
+    route_dict = {
+        "id": route.id,
+        "name": route.name,
+        "mode": route.mode,
+        "config": route.config,
+        "is_active": route.is_active,
+        "created_at": route.created_at,
+        "updated_at": route.updated_at,
+        "nodes": nodes_data,
+    }
+    
+    return ModelRouteRead(**route_dict)
 
 
 @router.get("/{route_id}", response_model=ModelRouteRead)
@@ -107,7 +136,36 @@ def update_route(
 ) -> ModelRouteRead:
     service = get_routing_service()
     route = service.update_route(db, route_id, payload)
-    return route
+    
+    # Manual serialization to work around the Pydantic issue
+    nodes_data = []
+    for node in route.route_nodes:
+        node_dict = {
+            "id": node.id,
+            "route_id": node.route_id,
+            "api_id": node.api_id,
+            "models": node.models,
+            "strategy": node.strategy,
+            "priority": node.priority,
+            "node_metadata": node.node_metadata,
+            "api_name": node.api_name,
+            "created_at": node.created_at,
+            "updated_at": node.updated_at,
+        }
+        nodes_data.append(node_dict)
+    
+    route_dict = {
+        "id": route.id,
+        "name": route.name,
+        "mode": route.mode,
+        "config": route.config,
+        "is_active": route.is_active,
+        "created_at": route.created_at,
+        "updated_at": route.updated_at,
+        "nodes": nodes_data,
+    }
+    
+    return ModelRouteRead(**route_dict)
 
 
 @router.delete("/{route_id}", status_code=204)

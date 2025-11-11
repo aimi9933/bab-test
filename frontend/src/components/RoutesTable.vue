@@ -35,7 +35,13 @@
                 <span class="provider-models">{{ node.models.length }} models</span>
                 <span class="provider-strategy">{{ node.strategy }}</span>
               </div>
-              <div v-if="route.nodes.length === 0" class="no-providers">
+              <div v-if="route.nodes.length === 0 && route.mode === 'auto'" class="config-info">
+                <span v-if="(route.config as any)?.selectedModels?.length > 0" class="provider-models">
+                  {{ (route.config as any).selectedModels.length }} models configured
+                </span>
+                <span v-else class="no-providers">No models configured</span>
+              </div>
+              <div v-if="route.nodes.length === 0 && route.mode !== 'auto'" class="no-providers">
                 No providers configured
               </div>
             </div>

@@ -70,6 +70,31 @@ class RoutingService:
         session.add(route)
         session.flush()
 
+        # Validate config-based models for auto/specific modes
+        config = route.config or {}
+        if route.mode in ["auto", "specific"] and config.get("selectedModels"):
+            # For auto mode, validate models exist in at least one active provider
+            # For specific mode, we need to check the provider in nodes
+            if route.mode == "auto":
+                provider_mode = config.get("providerMode", "all")
+                selected_models = config.get("selectedModels", [])
+                if provider_mode == "all":
+                    # Check all active providers
+                    active_providers = session.query(ExternalAPI).filter(ExternalAPI.is_active == True).all()
+                    if not active_providers:
+                        raise RouteValidationError("No active providers available")
+                    # Verify at least one model is available in some provider
+                    available_models = set()
+                    for provider in active_providers:
+                        available_models.update(provider.models or [])
+                    invalid_models = [m for m in selected_models if m not in available_models]
+                    if invalid_models:
+                        raise RouteValidationError(f"Models not found in any provider: {', '.join(invalid_models)}")
+                else:
+                    # Check specific provider
+                    provider_id = int(provider_mode.replace("provider_", ""))
+                    self._validate_models_exist(session, provider_id, selected_models)
+
         if payload.nodes:
             api_ids = [node.api_id for node in payload.nodes]
             self._validate_providers_exist(session, api_ids)
@@ -120,6 +145,26 @@ class RoutingService:
             route.is_active = update_data["is_active"]
         if "config" in update_data:
             route.config = update_data["config"]
+
+        # Validate config-based models for auto/specific modes
+        config = route.config or {}
+        if route.mode in ["auto", "specific"] and config.get("selectedModels"):
+            if route.mode == "auto":
+                provider_mode = config.get("providerMode", "all")
+                selected_models = config.get("selectedModels", [])
+                if provider_mode == "all":
+                    active_providers = session.query(ExternalAPI).filter(ExternalAPI.is_active == True).all()
+                    if not active_providers:
+                        raise RouteValidationError("No active providers available")
+                    available_models = set()
+                    for provider in active_providers:
+                        available_models.update(provider.models or [])
+                    invalid_models = [m for m in selected_models if m not in available_models]
+                    if invalid_models:
+                        raise RouteValidationError(f"Models not found in any provider: {', '.join(invalid_models)}")
+                else:
+                    provider_id = int(provider_mode.replace("provider_", ""))
+                    self._validate_models_exist(session, provider_id, selected_models)
 
         if payload.nodes is not None:
             session.query(RouteNode).filter(RouteNode.route_id == route_id).delete()
