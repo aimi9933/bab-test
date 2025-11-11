@@ -736,3 +736,216 @@ class TestHealthCheckIntegration:
 
         assert provider_openai.is_healthy is False
         assert provider_openai.consecutive_failures == 5
+
+
+class TestConfigBasedModelSelection:
+    """Tests for config-based model selection (new feature)."""
+
+    def test_create_auto_route_with_config_models(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="auto-config-route",
+            mode="auto",
+            is_active=True,
+            config={
+                "providerMode": "all",
+                "selectedModels": ["gpt-4", "gpt-3.5-turbo"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[],
+        )
+
+        route = service.create_route(db_session, payload)
+
+        assert route.id is not None
+        assert route.mode == "auto"
+        assert route.config["selectedModels"] == ["gpt-4", "gpt-3.5-turbo"]
+        assert len(route.route_nodes) == 0
+
+    def test_select_auto_with_config_all_providers(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="auto-all-config",
+            mode="auto",
+            config={
+                "providerMode": "all",
+                "selectedModels": ["gpt-4", "claude-3-opus"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[],
+        )
+
+        route = service.create_route(db_session, payload)
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id in [provider_openai.id, provider_anthropic.id]
+        assert model in ["gpt-4", "claude-3-opus"]
+
+    def test_select_auto_with_config_specific_provider(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="auto-specific-config",
+            mode="auto",
+            config={
+                "providerMode": f"provider_{provider_openai.id}",
+                "selectedModels": ["gpt-4"],
+                "modelStrategy": "single"
+            },
+            nodes=[],
+        )
+
+        route = service.create_route(db_session, payload)
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id == provider_openai.id
+        assert model == "gpt-4"
+
+    def test_create_specific_route_with_config_models(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="specific-config-route",
+            mode="specific",
+            config={
+                "selectedModels": ["gpt-4", "gpt-3.5-turbo"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, models=["gpt-4", "gpt-3.5-turbo"])
+            ],
+        )
+
+        route = service.create_route(db_session, payload)
+
+        assert route.mode == "specific"
+        assert route.config["selectedModels"] == ["gpt-4", "gpt-3.5-turbo"]
+        assert len(route.route_nodes) == 1
+
+    def test_select_specific_with_config_models(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="specific-select-config",
+            mode="specific",
+            config={
+                "selectedModels": ["gpt-4", "gpt-3.5-turbo"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, models=["gpt-4", "gpt-3.5-turbo"])
+            ],
+        )
+
+        route = service.create_route(db_session, payload)
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id == provider_openai.id
+        assert model == "gpt-4"
+
+    def test_auto_config_route_with_unhealthy_provider(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="auto-unhealthy-config",
+            mode="auto",
+            config={
+                "providerMode": "all",
+                "selectedModels": ["gpt-4", "claude-3-opus"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[],
+        )
+
+        route = service.create_route(db_session, payload)
+
+        provider_anthropic.is_healthy = False
+        db_session.commit()
+
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id == provider_openai.id
+        assert model == "gpt-4"
+
+    def test_auto_config_route_with_specific_provider_unhealthy_raises_error(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="auto-specific-unhealthy-config",
+            mode="auto",
+            config={
+                "providerMode": f"provider_{provider_openai.id}",
+                "selectedModels": ["gpt-4"],
+                "modelStrategy": "single"
+            },
+            nodes=[],
+        )
+
+        route = service.create_route(db_session, payload)
+
+        provider_openai.is_healthy = False
+        db_session.commit()
+
+        with pytest.raises(RouteServiceError, match="not active or healthy"):
+            service.select_provider_and_model(db_session, route.id)
+
+    def test_model_hint_overrides_config_models(
+        self, db_session: Session, provider_openai: ExternalAPI
+    ) -> None:
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="config-with-hint",
+            mode="specific",
+            config={
+                "selectedModels": ["gpt-4", "gpt-3.5-turbo"],
+                "modelStrategy": "cycle"
+            },
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, models=["gpt-4", "gpt-3.5-turbo"])
+            ],
+        )
+
+        route = service.create_route(db_session, payload)
+        provider_id, model = service.select_provider_and_model(db_session, route.id, model_hint="gpt-3.5-turbo")
+
+        assert provider_id == provider_openai.id
+        assert model == "gpt-3.5-turbo"
+
+    def test_empty_config_models_falls_back_to_nodes(
+        self, db_session: Session, provider_openai: ExternalAPI, provider_anthropic: ExternalAPI
+    ) -> None:
+        """Test backward compatibility when config has no selectedModels."""
+        service = get_routing_service()
+
+        payload = ModelRouteCreate(
+            name="fallback-to-nodes",
+            mode="auto",
+            config={},
+            nodes=[
+                RouteNodeCreate(api_id=provider_openai.id, strategy="round-robin"),
+                RouteNodeCreate(api_id=provider_anthropic.id, strategy="round-robin"),
+            ],
+        )
+
+        route = service.create_route(db_session, payload)
+        provider_id, model = service.select_provider_and_model(db_session, route.id)
+
+        assert provider_id in [provider_openai.id, provider_anthropic.id]
+        assert model in provider_openai.models + provider_anthropic.models
