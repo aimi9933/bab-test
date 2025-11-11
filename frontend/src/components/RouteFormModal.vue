@@ -84,7 +84,13 @@
 
           <div v-if="form.mode === 'specific' || form.mode === 'multi'" class="field-group">
             <label>Provider Nodes</label>
-            <div class="nodes-list">
+            <div v-if="providersLoading && availableProviders.length === 0" class="loading-state">
+              Loading providers...
+            </div>
+            <div v-else-if="availableProviders.length === 0" class="alert error">
+              No API providers available. Please add a provider first before configuring routes.
+            </div>
+            <div v-else class="nodes-list">
               <div v-for="(node, index) in form.nodes" :key="index" class="node-item">
                 <div class="field-inline">
                   <div class="field-group">
@@ -92,7 +98,7 @@
                     <select
                       :id="`node-api-${index}`"
                       :name="`node-api-${index}`"
-                      :disabled="busy"
+                      :disabled="busy || providersLoading"
                       v-model="node.apiId"
                     >
                       <option value="">Select a provider</option>
@@ -150,7 +156,7 @@
               <button
                 type="button"
                 class="btn btn-secondary"
-                :disabled="busy"
+                :disabled="busy || availableProviders.length === 0"
                 @click="addNode"
               >
                 Add Provider Node
@@ -192,7 +198,7 @@ type FieldKey = 'name' | 'mode' | 'config' | 'nodes';
 
 const props = defineProps<Props>();
 
-const { providers } = useProviders();
+const { providers, loadProviders, loading: providersLoading } = useProviders();
 
 const emit = defineEmits<{
   (event: 'close'): void;
@@ -266,12 +272,19 @@ const setFormFromRoute = (route: ModelRoute) => {
 
 watch(
   () => props.visible,
-  (visible) => {
+  async (visible) => {
     if (visible) {
+      // Ensure providers are loaded when the modal opens
+      await loadProviders();
+      
       if (props.mode === 'edit' && props.route) {
         setFormFromRoute(props.route);
       } else {
         resetForm();
+        // Add a default node for specific/multi modes
+        if (form.mode === 'specific' || form.mode === 'multi') {
+          addNode();
+        }
       }
     } else {
       resetForm();
@@ -282,9 +295,26 @@ watch(
 
 watch(
   () => props.route,
-  (route) => {
+  async (route) => {
     if (props.visible && props.mode === 'edit' && route) {
+      await loadProviders();
       setFormFromRoute(route);
+    }
+  },
+);
+
+watch(
+  () => form.mode,
+  (newMode, oldMode) => {
+    // Add a default node when switching to specific/multi mode from auto
+    if ((newMode === 'specific' || newMode === 'multi') && 
+        (oldMode === 'auto' || oldMode === undefined) && 
+        form.nodes.length === 0) {
+      addNode();
+    }
+    // Clear nodes when switching to auto mode
+    if (newMode === 'auto' && form.nodes.length > 0) {
+      form.nodes = [];
     }
   },
 );
@@ -389,13 +419,16 @@ const handleSubmit = () => {
     return;
   }
 
-  // Convert form nodes to backend format
-  const nodes = form.nodes.map(node => ({
-    apiId: node.apiId,
-    models: node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0),
-    strategy: node.strategy,
-    priority: node.priority,
-  }));
+  // Convert form nodes to backend format (only for specific/multi modes)
+  let nodes = [];
+  if (form.mode === 'specific' || form.mode === 'multi') {
+    nodes = form.nodes.map(node => ({
+      apiId: node.apiId,
+      models: node.modelsText.split(',').map(m => m.trim()).filter(m => m.length > 0),
+      strategy: node.strategy,
+      priority: node.priority,
+    }));
+  }
 
   const sanitized: ModelRouteFormValues = {
     name: form.name.trim(),
@@ -468,5 +501,12 @@ select:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.loading-state {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
 }
 </style>

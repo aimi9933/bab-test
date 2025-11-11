@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from typing import Any, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..db.models import ModelRoute, RouteNode, ExternalAPI
 from ..schemas.route import ModelRouteCreate, ModelRouteUpdate, RouteNodeCreate
@@ -85,13 +85,20 @@ class RoutingService:
         return route
 
     def get_route(self, session: Session, route_id: int) -> ModelRoute:
-        route = session.get(ModelRoute, route_id)
+        route = session.query(ModelRoute).options(
+            joinedload(ModelRoute.route_nodes).joinedload(RouteNode.api)
+        ).get(route_id)
         if route is None:
             raise RouteNotFoundError(f"Route with id {route_id} not found")
+        print(f"DEBUG: Route {route_id} has {len(route.route_nodes)} nodes")
+        for i, node in enumerate(route.route_nodes):
+            print(f"DEBUG: Node {i}: api_id={node.api_id}, models={node.models}")
         return route
 
     def list_routes(self, session: Session) -> list[ModelRoute]:
-        return session.query(ModelRoute).order_by(ModelRoute.id).all()
+        return session.query(ModelRoute).options(
+            joinedload(ModelRoute.route_nodes).joinedload(RouteNode.api)
+        ).order_by(ModelRoute.id).all()
 
     def update_route(
         self, session: Session, route_id: int, payload: ModelRouteUpdate

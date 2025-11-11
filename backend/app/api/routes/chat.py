@@ -61,8 +61,9 @@ def get_default_route_id() -> int:
     In the future, this could be configurable.
     """
     from ...db.models import ModelRoute
-    from ...db.session import SessionLocal
+    from ...db.session import get_sessionmaker
     
+    SessionLocal = get_sessionmaker()
     with SessionLocal() as db:
         route = db.query(ModelRoute).filter(ModelRoute.is_active == True).first()
         if not route:

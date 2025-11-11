@@ -1,22 +1,51 @@
 {
-  "generated_at": "2025-11-10T14:05:28.202939+00:00",
+  "generated_at": "2025-11-11T06:43:11.248451+00:00",
   "providers": [
     {
-      "name": "Updated Provider Name",
-      "base_url": "https://api.example.com/v1",
-      "api_key_encrypted": "gAAAAABpEfEot-za6lymVgvg3GZaZWJZ5oZajQkkBX8fQoJVnK8QUjuxjoQN9yVjVzpgsu3IhspeCzx6FVAeitUWBKCmg4TPYWJ5sORUEWvWx3Bc8EVcrCY=",
+      "name": "Mistral AI",
+      "base_url": "https://api.mistral.ai/v1/",
+      "api_key_encrypted": "gAAAAABpEtgwpV8V252gmUXxqE-hsPwMvQFBa8lOU5WBRY8L2smsVlkD1XquPOyoabAX3oj-sezhQ88voSxh0GnWkgBx5-BCVxbtjoWrz0DtafnrG9FdPDZSpaSpwD29wVzhYj8r35ZO",
       "models": [
-        "gpt-4"
+        "open-mixtral-8x22b"
       ],
       "is_active": true,
-      "status": "unreachable",
-      "latency_ms": null,
-      "last_tested_at": "2025-11-10T14:05:26.298302",
-      "consecutive_failures": 1,
+      "status": "online",
+      "latency_ms": 294.7927340001115,
+      "last_tested_at": "2025-11-11T06:43:11.235280+00:00",
+      "consecutive_failures": 0,
       "is_healthy": true,
-      "created_at": "2025-11-10T14:05:06",
-      "updated_at": "2025-11-10T14:05:28"
+      "created_at": "2025-11-11T06:31:12",
+      "updated_at": "2025-11-11T06:43:11"
     }
   ],
-  "routes": []
+  "routes": [
+    {
+      "name": "Auto Route",
+      "mode": "auto",
+      "config": {},
+      "is_active": true,
+      "nodes": [],
+      "created_at": "2025-11-11T06:32:33",
+      "updated_at": "2025-11-11T06:32:33"
+    },
+    {
+      "name": "Auto Route with Nodes",
+      "mode": "auto",
+      "config": {},
+      "is_active": true,
+      "nodes": [
+        {
+          "api_name": "Mistral AI",
+          "models": [
+            "open-mixtral-8x22b"
+          ],
+          "strategy": "round-robin",
+          "priority": 0,
+          "metadata": {}
+        }
+      ],
+      "created_at": "2025-11-11T06:33:02",
+      "updated_at": "2025-11-11T06:33:02"
+    }
+  ]
 }

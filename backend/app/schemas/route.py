@@ -11,7 +11,7 @@ class RouteNodeBase(BaseModel):
     models: list[str] = Field(default_factory=list)
     strategy: str = Field(default="round-robin")
     priority: int = Field(default=0, ge=0)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    node_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("strategy")
     @classmethod
@@ -31,7 +31,7 @@ class RouteNodeUpdate(BaseModel):
     models: Optional[list[str]] = None
     strategy: Optional[str] = None
     priority: Optional[int] = Field(default=None, ge=0)
-    metadata: Optional[dict[str, Any]] = None
+    node_metadata: Optional[dict[str, Any]] = None
 
     @field_validator("strategy")
     @classmethod
@@ -51,7 +51,7 @@ class RouteNodeRead(RouteNodeBase):
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class ModelRouteBase(BaseModel):
