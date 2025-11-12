@@ -184,15 +184,53 @@ app.include_router(chat_router)
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def catch_all_proxy(path: str, request: Request) -> JSONResponse:
     """
-    Catch-all route that proxies unhandled requests to chat completion endpoints.
+    Catch-all route that proxies unhandled requests to appropriate endpoints.
     This allows external tools like Cline to call the router as if it's a standard API.
     """
     # If the path starts with a known prefix, return 404
-    if path.startswith(("api/", "v1/", "ping", "swagger", "redoc", "openapi")):
+    if path.startswith(("api/", "ping", "swagger", "redoc", "openapi")):
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
     
-    # For any other path, try to handle it as a proxy request
-    # This is a fallback for unrecognized requests
+    # For v1 endpoints, check if they're chat completions
+    if path.startswith("v1/"):
+        if path == "v1/chat/completions" and request.method == "POST":
+            # Forward to the chat completions endpoint
+            from .api.routes.chat import chat_completions
+            from .db.session import get_db
+            
+            # Get the request body
+            import json
+            body = await request.body()
+            request_data = json.loads(body.decode()) if body else {}
+            
+            # Create the request object
+            from .api.routes.chat import ChatCompletionRequest
+            chat_request = ChatCompletionRequest(**request_data)
+            
+            # Get database session
+            db_gen = get_db()
+            db = next(db_gen)
+            
+            try:
+                result = await chat_completions(chat_request, request, db)
+                return JSONResponse(content=result.model_dump())
+            finally:
+                db.close()
+        elif path == "v1/models" and request.method == "GET":
+            # Forward to the models endpoint
+            from .api.routes.chat import list_models
+            from .db.session import get_db
+            
+            db_gen = get_db()
+            db = next(db_gen)
+            
+            try:
+                result = await list_models(db)
+                return JSONResponse(content=result)
+            finally:
+                db.close()
+    
+    # For any other path, return 404
     return JSONResponse(
         status_code=404, 
         content={"detail": f"Path /{path} not found. Use /v1/chat/completions for chat requests."}

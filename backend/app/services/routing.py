@@ -75,23 +75,11 @@ class RoutingService:
         if route.mode == "auto":
             provider_mode = config.get("providerMode", "all")
             selected_models = config.get("selectedModels", [])
-            if selected_models:
-                if provider_mode == "all":
-                    # Check all active providers
-                    active_providers = session.query(ExternalAPI).filter(ExternalAPI.is_active == True).all()
-                    if not active_providers:
-                        raise RouteValidationError("No active providers available")
-                    # Verify at least one model is available in some provider
-                    available_models = set()
-                    for provider in active_providers:
-                        available_models.update(provider.models or [])
-                    invalid_models = [m for m in selected_models if m not in available_models]
-                    if invalid_models:
-                        raise RouteValidationError(f"Models not found in any provider: {', '.join(invalid_models)}")
-                else:
-                    # Check specific provider
-                    provider_id = int(provider_mode.replace("provider_", ""))
-                    self._validate_models_exist(session, provider_id, selected_models)
+            # Auto mode should work without pre-selected models
+            # Only validate if specific provider is selected and models are specified
+            if provider_mode != "all" and selected_models:
+                provider_id = int(provider_mode.replace("provider_", ""))
+                self._validate_models_exist(session, provider_id, selected_models)
         elif route.mode == "specific":
             selected_models = config.get("selectedModels", [])
             if selected_models and payload.nodes:
@@ -226,18 +214,54 @@ class RoutingService:
         if selected_models:
             return self._select_auto_with_config(session, route, selected_models, provider_mode, model_hint)
         
-        if not route.route_nodes:
-            raise RouteServiceError(f"Route '{route.name}' has no configured nodes and no models in config")
-        
-        active_nodes = [
-            n for n in route.route_nodes
-            if session.get(ExternalAPI, n.api_id).is_active and session.get(ExternalAPI, n.api_id).is_healthy
-        ]
-        if not active_nodes:
-            raise RouteServiceError(f"No active providers in route '{route.name}'")
-
-        selected_node = self._apply_round_robin_strategy(route.id, active_nodes)
-        return self._pick_model_from_node(session, selected_node, model_hint)
+        # If no models are pre-configured, use all available models from active providers
+        if provider_mode == 'all':
+            active_providers = [
+                p for p in session.query(ExternalAPI).filter(
+                    ExternalAPI.is_active == True,
+                    ExternalAPI.is_healthy == True
+                ).all()
+            ]
+            if not active_providers:
+                raise RouteServiceError(f"No active providers in route '{route.name}'")
+            
+            if model_hint:
+                # Find a provider that has the requested model
+                for provider in active_providers:
+                    if model_hint in (provider.models or []):
+                        return provider.id, model_hint
+                # Model not found, but we should still work - use first available model
+                available_models = []
+                for provider in active_providers:
+                    available_models.extend(provider.models or [])
+                if available_models:
+                    selected_provider = self._apply_round_robin_to_providers(route.id, active_providers)
+                    return selected_provider.id, selected_provider.models[0] if selected_provider.models else available_models[0]
+                else:
+                    raise RouteServiceError(f"No models available in any provider")
+            else:
+                # Use round-robin to select provider, then use first available model
+                selected_provider = self._apply_round_robin_to_providers(route.id, active_providers)
+                if not selected_provider.models:
+                    raise RouteServiceError(f"No models available for provider '{selected_provider.name}'")
+                return selected_provider.id, selected_provider.models[0]
+        else:
+            # Specific provider mode
+            provider_id = int(provider_mode.replace('provider_', ''))
+            provider = session.get(ExternalAPI, provider_id)
+            if not provider or not provider.is_active or not provider.is_healthy:
+                raise RouteServiceError(f"Provider {provider_id} is not active or healthy in route '{route.name}'")
+            
+            if model_hint:
+                if model_hint in (provider.models or []):
+                    return provider.id, model_hint
+                else:
+                    raise RouteServiceError(f"Model '{model_hint}' not found in provider '{provider.name}'. Available models: {', '.join(provider.models or [])}")
+            
+            if not provider.models:
+                raise RouteServiceError(f"No models available for provider '{provider.name}'")
+            
+            return provider.id, provider.models[0]
 
     def _select_specific(
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
@@ -251,18 +275,29 @@ class RoutingService:
         if not route.route_nodes:
             raise RouteServiceError(f"Route '{route.name}' has no configured nodes")
         
-        if not model_hint:
-            raise RouteServiceError(f"Route '{route.name}' in 'specific' mode requires a model hint")
-
-        for node in route.route_nodes:
-            provider = session.get(ExternalAPI, node.api_id)
-            if not provider or not provider.is_active or not provider.is_healthy:
-                continue
-            node_models = node.models or provider.models or []
-            if model_hint in node_models:
+        node = route.route_nodes[0]
+        provider = session.get(ExternalAPI, node.api_id)
+        if not provider or not provider.is_active or not provider.is_healthy:
+            raise RouteServiceError(f"Provider for route '{route.name}' is not active or healthy")
+        
+        # If no models are pre-configured, use all available models from the provider
+        available_models = node.models if node.models else provider.models
+        
+        if model_hint:
+            if model_hint in (available_models or []):
                 return node.api_id, model_hint
-
-        raise RouteServiceError(f"Model '{model_hint}' not found in active providers for route '{route.name}'")
+            else:
+                # Model not found, use first available model instead
+                if available_models:
+                    return node.api_id, available_models[0]
+                else:
+                    raise RouteServiceError(f"No models available for provider '{provider.name}'")
+        
+        # If no model hint, use the first available model
+        if not available_models:
+            raise RouteServiceError(f"No models available for provider '{provider.name}'")
+        
+        return node.api_id, available_models[0]
 
     def _select_multi(
         self, session: Session, route: ModelRoute, model_hint: Optional[str] = None
@@ -280,8 +315,8 @@ class RoutingService:
 
         for node in active_nodes:
             if model_hint:
-                node_models = node.models or session.get(ExternalAPI, node.api_id).models or []
-                if model_hint not in node_models:
+                node_models = node.models if node.models else session.get(ExternalAPI, node.api_id).models
+                if model_hint not in (node_models or []):
                     continue
 
             strategy = node.strategy or "round-robin"
@@ -292,9 +327,26 @@ class RoutingService:
                 api_id, model = self._pick_model_from_node(session, node, model_hint)
                 return api_id, model
 
+        # If we get here with a model hint, it wasn't found
         if model_hint:
-            raise RouteServiceError(f"Model '{model_hint}' not found in active providers for route '{route.name}'")
-        raise RouteServiceError(f"No suitable provider found in route '{route.name}'")
+            available_models = []
+            for node in active_nodes:
+                node_models = node.models if node.models else session.get(ExternalAPI, node.api_id).models
+                available_models.extend(node_models or [])
+            if available_models:
+                # Use first available node and model instead of failing
+                selected_node = active_nodes[0]
+                node_models = selected_node.models if selected_node.models else session.get(ExternalAPI, selected_node.api_id).models
+                if node_models:
+                    return selected_node.api_id, node_models[0]
+                else:
+                    return selected_node.api_id, available_models[0]
+            else:
+                raise RouteServiceError(f"No models available in any active provider")
+        
+        # If no model hint, just pick the first available node and model
+        selected_node = active_nodes[0]
+        return self._pick_model_from_node(session, selected_node, None)
 
     def _apply_round_robin_strategy(self, route_id: int, nodes: list[RouteNode]) -> RouteNode:
         if not nodes:
