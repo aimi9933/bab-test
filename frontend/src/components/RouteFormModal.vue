@@ -520,10 +520,7 @@ const validateForm = (): boolean => {
       localErrors.provider = 'A provider must be selected';
       valid = false;
     }
-    if (specificConfig.selectedModels.length === 0) {
-      localErrors.models = 'At least one model must be enabled';
-      valid = false;
-    }
+    // Allow specific mode without pre-selected models - will use all provider models
   } else if (form.mode === 'multi') {
     if (multiConfigs.length === 0) {
       localErrors.nodes = 'At least one provider must be added';
@@ -536,11 +533,7 @@ const validateForm = (): boolean => {
         valid = false;
         break;
       }
-      if (config.selectedModels.length === 0) {
-        localErrors.nodes = `Provider ${i + 1}: At least one model must be enabled`;
-        valid = false;
-        break;
-      }
+      // Allow multi mode without pre-selected models - will use all provider models
     }
   }
 
@@ -596,7 +589,7 @@ const handleSubmit = () => {
     };
     nodes = [
       {
-        apiId: specificConfig.selectedProviderId,
+        api_id: specificConfig.selectedProviderId,  // Backend expects api_id
         models: specificConfig.selectedModels,
         strategy: 'round-robin',
         priority: 0,
@@ -604,7 +597,7 @@ const handleSubmit = () => {
     ];
   } else if (form.mode === 'multi') {
     nodes = multiConfigs.map(config => ({
-      apiId: config.providerId,
+      api_id: config.providerId,  // Backend expects api_id
       models: config.selectedModels,
       strategy: config.strategy,
       priority: config.priority,
